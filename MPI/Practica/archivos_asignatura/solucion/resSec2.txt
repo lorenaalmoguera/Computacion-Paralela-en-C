@@ -1,0 +1,7 @@
+Imagen original lena512x512.raw
+
+Pixeles iguales (I) + diferentes (D): Totales (T) I + D: T 149596 112548 262144 (media y mediaponderada)
+Pixeles iguales (I) + diferentes (D): Totales (T) I + D: T 42460 219684 262144 (original y media)
+Pixeles iguales (I) + diferentes (D): Totales (T) I + D: T 50737 211407 262144 (original y mediaponderada)
+
+DISTANCIAS (M y P): 1.626947e+03 1.432394e+03 
