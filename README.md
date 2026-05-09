@@ -8,7 +8,10 @@ ESTE REPOSITORIO SERÁ ACTUALIZADO A MEDIDA DE QUE VAYA YO ESTUDIANDO TAMBIÉN. 
 
 **NO VOY A TOCAR CUDA.**
 
-EN VERANO... EL PROFESOR **CIERRA** EL SERVIDOR ONLINE... ASÍ QUE DEBÉIS INSTALAROS UNA **MÁQUINA VIRTUAL** CON LINUX (*para no joderos el PC*) Y LAS LIBRERÍAS DE MPI Y OPENMP POR VUESTRA CUENTA.
+EN VERANO... EL PROFESOR **CIERRA** EL SERVIDOR ONLINE... ASÍ QUE DEBÉIS HACER UNA DE LAS SIGUIENTES COSAS:
+- INSTALAROS UNA **MÁQUINA VIRTUAL** CON LINUX (*para no joderos el PC*) Y MPI/OPENM EN LA MÁQUINA VIRTUAL.
+- INSTALAROS MPI/OPENMP EN VUESTRO SISTEMA OPERATIVO DIRECTAMENTE
+(yo personalmente he hecho lo segundo, ya que la máquina virtual iba demasiado lenta...XD)
 
 La asignatura tiene una CARGA DE TRABAJO GRANDE y la gente no la suele aprobar a la primera pero hay casos en los que si.
 NO RECOMIENDO pillarla junto a otras asignaturas difíciles o con una carga de trabajo grande. Si podéis, pilladla el primer año que no tengáis muchas asignaturas chungas.
