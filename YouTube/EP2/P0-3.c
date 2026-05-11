@@ -55,9 +55,9 @@ int main(int argc, char * argv[]){
     for(int i = 0 ; i < dim ; i++){
         if(i == 0 || i == 1 || i == 2 || i == 3 || i == 4 || i == 7 || i == 9 || i == dim-1 || i == dim-2 || i == dim-3) continue;
         
+        int pos_columna = 0;
         for(int j = 0 ; j < dim ; j++){
-            
-            int pos_columna = 0;
+
             if(j == 0 || j == 3 || j == 4 || j == 6 || j == dim-1 || j == dim-2 || j == dim-3) continue;
             // memcpy -> 1. a donde copiar, 2. de donde copiar, 3. tam tipo dato
             memcpy(&Mat_Red[pos_fila][pos_columna],&m[i][j], sizeof(double));
