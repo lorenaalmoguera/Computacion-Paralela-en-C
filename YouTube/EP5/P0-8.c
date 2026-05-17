@@ -40,17 +40,20 @@ int main(int argc, char* argv[]){
     // II II ID ID      
 
     // PASAR TODO A SUBMATRICES
-
-    for(int i = 0 ; i < dim ; i++){
-        for(int j = 0 ; j < dim ; j++ ){
-            if(i < dim/2 && j < dim/2){
-                *(*(CuadSI+i)+j) = *(*(MatTotal+i)+j); 
-            }else if(i < dim/2 && j >= dim/2){
-                *(*(CuadSD+i)+j) = *(*(MatTotal+i)+j);
-            }else if(i >= dim/2 && j < dim/2){
-                *(*(CuadII+i)+j) = *(*(MatTotal+i)+j);
-            }else if(i >= dim/2 && j >= dim/2){
-                *(*(CuadID+i)+j) = *(*(MatTotal+i)+j);
+    for(int i = 0; i < dim; i++) {
+        for(int j = 0; j < dim; j++) {
+            if(i < dim/2 && j < dim/2) {
+                // Superior Izquierdo: copiar directamente
+                CuadSI[i][j] = MatTotal[i][j]; // Copias directamente: CuadSI[i][j]
+            } else if(i < dim/2 && j >= dim/2) {
+                // Superior Derecho: restar dim/2 de la columna
+                CuadSD[i][j - dim/2] = MatTotal[i][j]; // Restas dim/2 de la columna: CuadSD[i][j - dim/2] porque en CuadSD solo tienes índices 0-255, no 256-511
+            } else if(i >= dim/2 && j < dim/2) {
+                // Inferior Izquierdo: restar dim/2 de la fila
+                CuadII[i - dim/2][j] = MatTotal[i][j]; // Restas dim/2 de la fila: CuadII[i - dim/2][j]
+            } else {
+                // Inferior Derecho: restar dim/2 de fila y columna
+                CuadID[i - dim/2][j - dim/2] = MatTotal[i][j]; // Restas dim/2 de ambas: CuadID[i - dim/2][j - dim/2]
             }
         }
     }
