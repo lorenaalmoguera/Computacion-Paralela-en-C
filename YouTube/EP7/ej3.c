@@ -19,10 +19,8 @@ int main(int argc,char *argv[])
     }
     else{
       for (i=1;i<nproces;i++){
-        MPI_Recv(&data2,1,MPI_DOUBLE,MPI_ANY_SOURCE,5,MPI_COMM_WORLD,&status);
-        //data1 = data1 + data2;
-        printf("%d", status.MPI_SOURCE);
-        data1 = data1 + data2 *  (status.MPI_SOURCE);
+        MPI_Recv(&data2,1,MPI_DOUBLE,i,5,MPI_COMM_WORLD,&status);
+        data1 = data1 + data2;
          }
     }
     printf("Proceso %d. d1: %f - d2: %f.\n",myrank,data1,data2);  
