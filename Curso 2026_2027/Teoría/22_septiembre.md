@@ -327,3 +327,161 @@ int main(int argc, char* argv[]){
 ```
 
 En la traza observamos que para 4 ejecuciones, los unicos que hacen algo son los procesos 0 y 3. El resto de procesos siguen haciendo la ejecución pero no entrarán en el if.
+
+El código funcionará para cualquier número de procesos mayor a 3. 
+
+Si pensais que las comunicaciones se hacen justo cuando están en el send y recv podremos desarrollar los códigos.
+
+La función de recepción es bloqueante. Puede pasar 2 cosas:
+* que ya le hayan enviado y tiene la información en el buffer (recogerlo es pillarlo del buffer y ponerlo en la posicion de memoria especificado en la recepcion)
+* que nunca le envian y se queda esperando
+
+Que pasa si...
+
+
+
+```c
+
+int main(int argc, char* argv[]){
+    int nproces, myrank, err;
+    double data1 = 0, data2 = 0;
+    MPI_Status status;
+
+    err = MPI_Init(&argc, &argv);
+    err = MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
+    err = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    
+    if (myrank == 0){
+        data1 = 47645,3;
+        MPI_Send(&data1, 1, MPI_DOUBLE, 3, 99, MPI_COMM_WORLD); // que enviamos, cuantos datos, que tipo de datos, a quien, que tag, que comunicador
+    }else{
+        if(myrank == 3){
+            MPI_Recv(&data2, 1, MPI_DOUBLE, 0, 88, MPI_COMM_WORLD, &status); // donde recibimos, cuanto recibimos, que tipo de dato, de quien, que tag, que comunicador, donde guardamos el status.
+        }
+    }
+
+    err = MPI_Finalize();
+}
+```
+
+El proceso 3 nunca saldrá de la ejecución porque se esperará a recibir los datos que nunca recibirá. Entonces lo que vemos es que nadie ha acabado la ejecución porque `MPI_Finalize()` es una barrera de sincronización que se espera a que lleguen todos para termiinar.
+
+Que pasa si
+
+```c
+
+int main(int argc, char* argv[]){
+    int nproces, myrank, err;
+    double data1 = 0, data2 = 0;
+    MPI_Status status;
+
+    err = MPI_Init(&argc, &argv);
+    err = MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
+    err = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    
+    if (myrank == 0){
+        data1 = 47645,3;
+        MPI_Send(&data1, 1, MPI_DOUBLE, 2, 99, MPI_COMM_WORLD); // que enviamos, cuantos datos, que tipo de datos, a quien, que tag, que comunicador
+    }else{
+        if(myrank == 3){
+            MPI_Recv(&data2, 1, MPI_DOUBLE, 0, 99, MPI_COMM_WORLD, &status); // donde recibimos, cuanto recibimos, que tipo de dato, de quien, que tag, que comunicador, donde guardamos el status.
+        }
+    }
+
+    err = MPI_Finalize();
+}
+```
+
+Ocurre exactamente lo mismo que en el caso anterior.
+Pese a que las etiquetas parece son el mismo mensaje, el emisor y receptor no coinciden.
+
+
+Que pasa si
+
+```c
+
+int main(int argc, char* argv[]){
+    int nproces, myrank, err;
+    double data1 = 0, data2 = 0;
+    MPI_Status status;
+
+    err = MPI_Init(&argc, &argv);
+    err = MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
+    err = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    
+    if (myrank == 0){
+        data1 = 47645,3;
+        MPI_Send(&data1, 1, MPI_DOUBLE, 3, 99, MPI_COMM_WORLD); // que enviamos, cuantos datos, que tipo de datos, a quien, que tag, que comunicador
+    }else{
+        if(myrank == 3){
+            MPI_Recv(&data2, 1, MPI_DOUBLE, 1, 99, MPI_COMM_WORLD, &status); // donde recibimos, cuanto recibimos, que tipo de dato, de quien, que tag, que comunicador, donde guardamos el status.
+        }
+    }
+
+    err = MPI_Finalize();
+}
+```
+
+Ocurre exactamente lo mismo otra vez.
+
+Que pasa si
+
+```c
+
+int main(int argc, char* argv[]){
+    int nproces, myrank, err;
+    double data1 = 0, data2 = 0;
+    MPI_Status status;
+
+    err = MPI_Init(&argc, &argv);
+    err = MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
+    err = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    
+    if (myrank == 0){
+        data1 = 47645,3;
+        MPI_Send(&data1, 1, MPI_DOUBLE, 3, 99, MPI_COMM_WORLD); // que enviamos, cuantos datos, que tipo de datos, a quien, que tag, que comunicador
+    }else{
+        if(myrank == 100){
+            MPI_Recv(&data2, 1, MPI_DOUBLE, 0, 99, MPI_COMM_WORLD, &status); // donde recibimos, cuanto recibimos, que tipo de dato, de quien, que tag, que comunicador, donde guardamos el status.
+        }
+    }
+
+    err = MPI_Finalize();
+}
+```
+
+Habrá una función de envío que no se ha finalizado. MPI_Finalize() sincronizará y terminará, pero MPI al finalizar nos indicará que hay un proceso que tiene información en su buffer que no se ha recibido y lo vaciará.
+
+
+#### Lo mismo pero con vectores ahora
+
+ejemplo:
+El proceso 1 le envia a todos los demas procesos una determinada información, es decir un boradcast
+```c
+int main(int argc, char* argv[]){
+    int nproces, myrank, err;
+    int i_vector1[16];
+    MPI_Status status;
+
+    err = MPI_Init(&argc, &argv);
+    err = MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
+    err = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    
+    if (myrank == 1){
+        for(int i = 0 ; i < nproces ; i++){
+            if(i!= 1) MPI_Send(i_vector1, 16, MPI_INTEGER, i, 99, MPI_COMM_WORLD); // computacionalmente la gente no suele hacer el if fuera, pero en verdad sería hacer un send al 0 y luego un for a partir del 2 a i<nproces. en las prácticas mejor hacerlo así
+        }
+       
+    }else{
+        MPI_Recv(&i_vector1[0], 16, MPI_INTEGER, 1, 99, MPI_COMM_WORLD, &status);
+    }
+
+    err = MPI_Finalize();
+}
+```
+
+> i_vector1 y &i_vector1[0] desde un punto de vista algorítmico es la posición inical del vector.
+
+
+* las sentencias condicionales suelen indicar que una zona de código es ejecutada por 1 proceso u otro
+* el número de envíos y recepciones depende de la ejecución paralela (variable nproces). la repetición de recepciones no la vemos en el código porque está en un else, sin embargo, tenemos que tener encuenta la cantidad de ejecuciones que están ocurriendo.
