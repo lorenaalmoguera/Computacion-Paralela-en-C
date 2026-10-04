@@ -2,17 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-/*
-Se dispone de un fichero binario que contiene dos vectores de datos almacenados
-consecutivamente. El tamaño de ese fichero es de 400 bytes
-El programa deberá trabajar con dos vectores, V1 y V2 que tendrán el mismo tamaño. 
-
-La cantidad de datos de tipo entero que se deben leer se indicará mediante un argumento
-en la línea de ejecución del programa. Se sabe que dicha cantidad será como máximo de
-50 enteros. 
-*/
-
 int main(int argc, char* argv[]){
 
     char * filename;
