@@ -45,7 +45,7 @@ for (int i = 0; i < tam; i++) {
 
 `v + i` señala el destino del entero `i`. Si se hace una lectura por llamada, `cantidad` es 1. En código robusto se compara el valor devuelto por `fread` con la cantidad esperada.
 
-La posición del fichero avanza tras cada lectura correcta. Si el fichero almacena primero todos los elementos de `V1` y luego los de `V2`, se leen ambos vectores en ese orden. Si los datos están intercalados, el orden de lectura debe reflejarlo.
+La posición del fichero avanza tras cada lectura correcta. Si el fichero almacena primero todos los elementos de `V1` y luego los de `V2`, se leen ambos vectores en ese orden. Si solo lees un prefijo de V1, debes saltar o consumir el resto de V1 antes de leer V2: el segundo vector comienza tras el bloque completo del fichero, no tras el prefijo solicitado. Si los datos están intercalados, el orden de lectura debe reflejarlo.
 
 ## 4. Cuánto cabe en un fichero
 
@@ -73,7 +73,7 @@ int *v = malloc((size_t)tam * sizeof *v);
 free(v);
 ```
 
-La expresión `sizeof *v` ayuda a mantener el tamaño correcto si cambia el tipo de `v`. Cada bloque reservado se libera una sola vez.
+La expresión `sizeof *v` ayuda a mantener el tamaño correcto si cambia el tipo de `v`. Cada bloque reservado se libera una sola vez. Estos fragmentos suponen `tam > 0` y un tamaño que no desborda `size_t`; antes de usar el resultado hay que comprobar `v != NULL`. Incluye `stdlib.h` para malloc/free.
 
 ### Dos reservas o una reserva
 
@@ -102,7 +102,7 @@ datos ──> [ V1[0] ... V1[tam-1] | V2[0] ... V2[tam-1] ]
           ^ v1                  ^ v2 = datos + tam
 ```
 
-`v1` y `v2` son punteros interiores al mismo bloque; se libera solo `datos`, no cada vista por separado.
+`v1` apunta al inicio y `v2` a una posición interior del mismo bloque; se libera solo `datos`, no cada vista por separado. Comprueba `datos != NULL` antes de calcular `datos + tam`; el tamaño de la reserva conjunta también debe ser representable sin desbordamiento.
 
 ## 6. Encontrar máximos y comparar vectores
 

@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-- `MPI_Init` inicia el entorno MPI y se llama antes de las demás funciones MPI.
+- `MPI_Init` inicia el entorno MPI y se llama antes de las comunicaciones de estos ejemplos; existen funciones que el estándar permite usar antes de inicializar.
 - `MPI_COMM_WORLD` es el comunicador predefinido del grupo de procesos lanzados.
 - `MPI_Comm_size` devuelve cuántos procesos pertenecen al comunicador.
 - `MPI_Comm_rank` devuelve el identificador local del proceso, de `0` a `nproces-1`.
@@ -38,14 +38,14 @@ Las salidas de `printf` de varios procesos pueden mezclarse y su orden puede cam
 
 ## 3. Mensajes: `MPI_Send` y `MPI_Recv`
 
-Un mensaje describe una secuencia contigua de elementos en memoria. El emisor especifica la dirección inicial, el número y tipo de elementos, destino, etiqueta y comunicador.
+Con tipos básicos, los ejemplos envían elementos contiguos en memoria. MPI también permite describir posiciones no contiguas mediante tipos derivados. El emisor especifica la dirección inicial, el número y tipo de elementos, destino, etiqueta y comunicador.
 
 ```c
 MPI_Send(buffer, cantidad, tipo_mpi, destino, tag, comunicador);
 MPI_Recv(buffer, capacidad, tipo_mpi, origen, tag, comunicador, &status);
 ```
 
-La recepción debe coincidir en proceso emisor/destinatario, tipo, cantidad compatible, etiqueta y comunicador. El búfer receptor debe tener espacio suficiente. `MPI_Recv` es bloqueante: no termina hasta recibir un mensaje compatible. Un origen o etiqueta comodín se pueden expresar con `MPI_ANY_SOURCE` o `MPI_ANY_TAG` en recepción.
+El emparejamiento del mensaje depende del emisor, destinatario, etiqueta y comunicador/contexto. Además, los tipos deben ser compatibles y el búfer receptor debe tener capacidad suficiente: el `count` de recepción puede ser mayor que la cantidad enviada. Tipo y capacidad no seleccionan el mensaje. `MPI_Recv` es bloqueante: no termina hasta recibirlo. Un origen o etiqueta comodín se pueden expresar con `MPI_ANY_SOURCE` o `MPI_ANY_TAG` en recepción.
 
 El envío bloqueante no significa necesariamente que el receptor ya haya procesado el mensaje cuando retorna. Evita depender de detalles de buffers; diseña las parejas de envío y recepción y comprueba que no haya esperas circulares.
 
@@ -123,4 +123,10 @@ Antes de codificar, crea una tabla:
 | Cantidad y tipo | Capacidad suficiente y tipo compatible |
 | Mismo comunicador | Mismo comunicador |
 
-Si `Recv` espera un emisor, etiqueta o comunicador que nunca llega, el proceso puede quedarse bloqueado. Una coincidencia superficial de etiquetas no basta: emisor, receptor, tipo y comunicador también deben encajar.
+Si `Recv` espera un emisor, etiqueta o comunicador que nunca llega, el proceso puede quedarse bloqueado. Una coincidencia superficial de etiquetas no basta para emparejar el mensaje; además hay que garantizar tipos compatibles y capacidad suficiente para transferirlo correctamente.
+
+## 8. Ampliación de colectivas y revisión
+
+Consulta [Funciones colectivas](../Apuntes%20Clase/MPI/Funciones%20colectivas/README.md) para Gather, Gatherv, Scatter, Scatterv, Scan, Reduce_scatter y Barrier, además de las operaciones anteriores. Incluye diagramas y [implementaciones con Send/Recv](../Apuntes%20Clase/MPI/Funciones%20colectivas/Send_Recv/README.md).
+
+La [revisión conceptual para consultar al profesor](Revision_conceptual_para_profesor.md) separa errores, simplificaciones y correcciones de código.

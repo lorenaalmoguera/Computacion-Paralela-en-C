@@ -1,77 +1,97 @@
-# Introduccion 
+# Clase del 8 de septiembre: introducción y práctica P0_T1
 
-> Todo lo que esté en este formato es lo que ha dicho el profesor en clase.
+Estas notas recogen la introducción a la asignatura y las preguntas sobre el fichero binario de P0_T1. Las aclaraciones distinguen las anotaciones de clase de las propiedades generales de C.
 
-## Objetivos
+## Objetivos anotados
 
-1. Evaluar las prestaciones de un sistema paralelo en su conjunto software más hardware. 
-2. Diseñar algoritmos paralelos y paralelizar códigos secuenciales ya existentes. 
-3. Desarrollar programas para sistemas paralelos de memoria distribuida usando la librería 
-especializada MPI. 
-4. Desarrollar programas para sistemas paralelos de memoria compartida usando el paradigma 
-OpenMP 
-5. Conocer y la arquitectura y el paradigma de programación CUDA para GPUs en aplicaciones 
-de propósito general.
+1. Evaluar las prestaciones de un sistema paralelo considerando hardware y software.
+2. Diseñar algoritmos paralelos y paralelizar programas secuenciales.
+3. Programar memoria distribuida con MPI.
+4. Programar memoria compartida con OpenMP.
+5. Conocer las arquitecturas y el paradigma CUDA para GPU.
 
+Estos son los objetivos registrados en las notas; el repositorio desarrolla sobre todo C secuencial, MPI y OpenMP y no contiene un bloque de ejercicios CUDA.
 
-## Conceptos a ver en esta asignatura:
+## Arquitecturas y herramientas
 
-> Como explotar Clusters -> (def clusters:) Conjunto de computadores conectados a través de una red de comunicación - Dividir el trabajo de una aplicación para diferentes recursos de cómputo.
+Un clúster es un conjunto de computadores conectados por una red. Sus nodos pueden tener varios núcleos, y cada núcleo constituye un recurso de procesamiento, aunque comparta parte de la memoria y las cachés del chip.
 
-> 1. Recurso de altas prestaciones: Librería MPI -> repartir trabjao, distribuir entre los distintos recursos de cómputo.
+```mermaid
+flowchart TD
+    A["Sistema paralelo"] --> B["Nodo 0: memoria y varios nucleos"]
+    A --> C["Nodo 1: memoria y varios nucleos"]
+    B <-->|red| C
+    B --> D["MPI: procesos; OpenMP: hilos"]
+    C --> E["MPI: procesos; OpenMP: hilos"]
+```
 
-> Hay diferentes cores en el chip de un procesador, es decir procesadores independientes. Desde fuera es una unidad. Desde dentro son diferentes elementos de procesamiento llamados cores.
+MPI permite distribuir trabajo y comunicar procesos, incluidos procesos en un mismo equipo. OpenMP permite repartir trabajo entre hilos con memoria compartida. Las arquitecturas híbridas combinan ambos niveles; las GPU ofrecen otra clase de recursos.
 
-> Se decide como repartir el trabajo en esos cores.
+## Evaluación registrada en clase
 
-> Sabiendo esto. 2. Recurso de altas prestaciones -> Librería OpenMP: Será la segunda parte de la asignatura. Tendremos ya conceptos de reparto de trabjo y veremos la diferencia entre esta y MPI.
+La anotación original indica un examen final escrito con peso del 100 % y duración aproximada entre 2 h 30 min y 3 h. Esta nota refleja lo registrado ese día; no sustituye a la guía docente ni a las indicaciones posteriores del profesorado. No se debe trasladar automáticamente un criterio de evaluación de otro curso.
 
-> Arquitecturas cluster vs Arquitecturas de memoria distribuida.
+## P0_T1: dos vectores en 400 bytes
 
-> Las arquitecturas que nos encontramos suelen ser mixtas.
+### Diagrama del fichero
 
-> 3. Tarjetas gráficas, GPUs. -> NVIDIA -> ManyCores
+Si el fichero contiene exclusivamente dos vectores iguales de enteros y cada entero del formato ocupa cuatro bytes:
 
+```mermaid
+flowchart LR
+    A["Fichero: 400 bytes"] --> B["V1: 200 bytes = 50 enteros"]
+    A --> C["V2: 200 bytes = 50 enteros"]
+```
 
-## Evaluación
+Son **100 enteros en total**, no 200 enteros por vector. La cifra de 200 es el número de bytes correspondiente a cada vector. Comprueba sizeof(int) y que coincida con el formato del fichero; C no exige que int mida siempre cuatro bytes.
 
-* **Evaluación escrita (100%):** Un único examen final **escrito** que abarcará toda la materia de la asignatura, con duracion entre 2h30 y 3h.
+### Preguntas y respuestas
 
-## Recursos
-Introducción a la programación paralela de Francisco Almeida Rodríguez, 
-Domingo Giménez Cánovas, José Miguel Mantas Ruíz y Antonio Vidal Maciá 
-Using MPI: portable parallel programming with the message-passing interface 
-Gropp, William. Lusk, Ewing. Skjellum, Anthony.Edit: Cambridge, MA: MIT 
-Press, 1999 
-Using OpenMP: portable shared memory parallel programming. Chapman, 
-Barbara, Jost, Gabriele. Pas, Ruud van der. The MIT Press, 2008. 
-CUDA by Example: An Introduction to General-Purpose GPU 
-Programming 
-de Jason Sanders y Edward Kandrot 
-Fundamentos de los computadores. Pedro de Miguel Anasagasti. Paraninfo. 
-Estructura de computadores. Angulo Usategui, José María. Paraninfo 1996 
-Arquitectura de computadores. Ortega Lopera, Julio - Prieto Espinosa, Alberto 
-Anguita López, Mancia. Thomson. 
-Organización y Arquitectura de Computadores Diseño para Optimizar 
-Prestaciones de William Stallings, Antonio Cañas Vargas y Alberto Prieto 
-Espinosa 
-MPI: https://www.mpi-forum.org/ 
-OPENMP: http://openmp.org/wp/ 
-CUDA: http://www.nvidia.es/object/cuda-parallel-computing-es.html 
-** Mucha información adicional en web e IAs generativas**
+**¿Qué tamaño tendría un fichero de texto equivalente?**
 
-# Explicación P0_T1 algunas preguntas en clases
-* *Suponiendo que el fichero almacena enteros. ¿Cuál es la cantidad máxima de enteros V1 y V2?* -> Nos debemos hacer la pregunta: ¿Cuánto ocupa un entero?
+No puede determinarse solo a partir del tamaño binario. Depende de los valores, número de dígitos, signos y separadores de la representación elegida.
 
-* *¿Cuá sería el tamaño del fichero, si es que puede determinarse, si en lugar de ser binario fuera de tipo texto?* -> Si. Medimos por carácteres. Sabemos de que número se trata por ASCII. Y podríamos saber cuando terminar un número por los delimitadores.
+**¿Podemos conocer cuántos enteros contiene un texto de 400 bytes mirando solo su tamaño?**
 
-* *Si el fichero de 400 bytes es de tipo texto, ¿Podemos determinar únicamente a partir de su tamaño cuántos enteros contiene?* -> unicamente si tenemos signos negativos y positivos y si hay claros separadores.
+No. Dos textos del mismo tamaño pueden representar cantidades diferentes de números. Hay que analizar el contenido y su formato. Saber que usa signos y separadores no permite calcular la cantidad únicamente con los bytes totales.
 
-> 200 maximo, como maximo 100 entre los dos.
+**¿Cómo sabemos cuántos elementos leer?**
 
-* ¿Cómo podemos saber exactamente cuántos elementos tenemos que leer? -> por argumento / cli o pasándo un fichero.
+El tamaño y distribución deben venir del enunciado, los argumentos, metadatos del fichero o el análisis de su contenido. El programa debe comprobar que la lectura y la reserva son compatibles con el fichero, y verificar el retorno de fread.
 
-* ¿Qué tipo de memoria es preferible utilizar, estática o dinámica? -> dinámica, para poder reservar según la memoria que necesite.
+Si el fichero almacena dos vectores completos de cincuenta enteros y solo se quieren los primeros diez de cada uno, después de leer diez de V1 no se está aún al principio de V2: faltan cuarenta enteros de V1 que hay que saltar o leer.
 
-* Si el número de elementos a leer se almacena en la variable tam, ¿qué diferencias existen entre realizar la reserva de las siguientes formas: a) `int v[tam]` y b) int `*v = malloc(tam*sizeofi(int));`? -> la memoria dinámica continuará existiendo hasta que se haga un free. hay también una diferencia en la zona en la que se guarda.
-# Día
+**¿Cuándo utilizar memoria dinámica?**
+
+Cuando el tamaño se decide durante la ejecución y necesitamos controlar la reserva o su duración. No es automáticamente la mejor opción para todos los tamaños; un array automático también puede servir para un ejemplo pequeño.
+
+**¿Qué diferencia hay entre int v[tam] y malloc?**
+
+```c
+int v[tam]; /* Array de longitud variable, si lo admite el compilador. */
+```
+
+Tiene duración automática y termina al salir de su bloque. No es una reserva de duración estática.
+
+```c
+int *v = malloc((size_t)tam * sizeof *v);
+/* Comprobar v != NULL antes de usarlo. */
+free(v);
+```
+
+malloc proporciona almacenamiento dinámico hasta que se libera. Necesita stdlib.h, un tamaño válido y comprobación del resultado. Su soporte no depende de los arrays de longitud variable.
+
+## Bibliografía anotada
+
+- Introducción a la programación paralela: Francisco Almeida Rodríguez, Domingo Giménez Cánovas, José Miguel Mantas Ruiz y Antonio Vidal Maciá.
+- Using MPI: William Gropp, Ewing Lusk y Anthony Skjellum.
+- Using OpenMP: Barbara Chapman, Gabriele Jost y Ruud van der Pas.
+- CUDA by Example: Jason Sanders y Edward Kandrot.
+- Fundamentos de los computadores: Pedro de Miguel Anasagasti.
+- Estructura de computadores: José María Angulo Usategui, Paraninfo, 1996, según la anotación original; confirmar la edición docente.
+- Arquitectura de computadores: Julio Ortega Lopera, Alberto Prieto Espinosa y Mancia Anguita López, Thomson, según la anotación original; confirmar la edición docente.
+- Organización y arquitectura de computadores: William Stallings.
+
+Recursos oficiales: [MPI Forum](https://www.mpi-forum.org/), [OpenMP](https://www.openmp.org/) y [CUDA](https://developer.nvidia.com/cuda-zone). Para nombres y ediciones concretas, utiliza la bibliografía docente.
+
+[Práctica P0_T1](../../Practica/Secuencial/P0-1/README.md) · [Clase del 11 de septiembre revisada](11_septiembre_revisado.md).

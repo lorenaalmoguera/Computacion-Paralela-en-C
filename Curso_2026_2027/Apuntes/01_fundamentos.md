@@ -33,10 +33,10 @@ Se compara la versión paralela con una versión secuencial correcta, usando el 
 | Medida | Fórmula | Lectura |
 |---|---|---|
 | Aceleración (speed-up) | `S(P) = T(1) / T(P)` | Cuántas veces reduce el tiempo usar `P` procesos o procesadores. |
-| Eficiencia | `E(P) = S(P) / P` | Fracción media de uso efectivo de los `P` recursos. |
+| Eficiencia | `E(P) = S(P) / P` | Aceleración por recurso respecto a la referencia; no mide directamente la ocupación de CPU. |
 | Escalabilidad | Se estudia al variar problema y recursos | Describe cómo cambia el rendimiento; no es un único número universal. |
 
-`T(1)` es el tiempo secuencial y `T(P)` el tiempo con `P` recursos. Si `S(P) = P`, la aceleración es ideal y la eficiencia vale 1. Comunicación, sincronización, desequilibrio y partes secuenciales reducen la ganancia.
+`T(1)` es el tiempo de la referencia secuencial y `T(P)` el tiempo con `P` recursos. Indica qué referencia usas: el mejor algoritmo secuencial y el programa paralelo ejecutado con un proceso pueden tener tiempos distintos. Si `S(P) = P`, la aceleración es ideal y la eficiencia vale 1. Comunicación, sincronización, desequilibrio y partes secuenciales reducen la ganancia.
 
 ### Ley de Amdahl
 
@@ -46,7 +46,9 @@ Si `f` es la fracción paralelizable del trabajo y `1-f` queda secuencial, una c
 S(P) = 1 / ((1 - f) + f/P)
 ```
 
-Cuando `P` crece mucho, el límite es `1/(1-f)`. Por eso conviene reducir también el trabajo secuencial y el coste de coordinación.
+Cuando `P` crece mucho y `f < 1`, el límite es `1/(1-f)`. Para `f = 1`, este modelo ideal da `S(P)=P`, sin límite finito al aumentar recursos. El modelo no incluye los costes adicionales de comunicación y coordinación.
+
+En coma flotante, cambiar el orden de operaciones puede modificar el redondeo. La validación debe establecer la tolerancia adecuada; equivalencia matemática no garantiza identidad de bits.
 
 ## 5. Memoria compartida y distribuida
 

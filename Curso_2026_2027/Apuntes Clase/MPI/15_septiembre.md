@@ -1,236 +1,151 @@
-# Arquitecturas de memoria distribuida: MPI
+# Clase del 15 de septiembre: memoria distribuida y MPI
 
-En SO se ven codigos que se crean hilos de sistemas operativos. Esos hilos son capaces de comunicarse. La computación paralela me sirve para facilitar el desarrollo de códigos. Otro ejemplo para ver cuanto la computación paralela puede facilitar el desarrollo de código son los hilos.
+MPI permite que procesos con memoria propia intercambien datos. Antes de programar las comunicaciones, necesitamos una versión secuencial correcta, un reparto del trabajo y una descripción de los datos que necesita cada proceso.
 
-Que coste tiene cada uno de los hilos y donde los mapeo?
+## Procesos, hilos y recursos de cómputo
 
-Los hilos tienen un objetivo común: aplicación que genera x acciones.
+Un proceso tiene su propio espacio de direcciones. Los hilos de un mismo proceso comparten ese espacio, aunque cada hilo mantiene su ejecución y variables locales propias.
 
-La comunicación entre los hilos, por el concepto del paralelismo, es imprescindible.
+Un ejemplo de reparto consiste en dividir mil sumas entre dos trabajadores: cada uno calcula una parte y después se combinan los resultados. La comunicación o sincronización necesaria depende de las dependencias del algoritmo. No toda tarea paralela requiere comunicarse en cada paso, ni toda comunicación sincroniza a todos los participantes.
 
-Ejemplo 1K sumas. Un hilo 500 y el otro hilo 500. Cuando gestionamos la sincronización? Cuando termine la suma de los hilos individuales, es decir, cuando estamos seguros de que ha acabado su trabajo.
+El resultado paralelo debe corresponder al resultado secuencial de referencia. Con enteros se puede exigir igualdad exacta si no hay desbordamiento; con punto flotante, un orden de suma diferente puede producir pequeñas diferencias de redondeo y conviene definir una tolerancia.
 
-Las sincronizaciones estarán siempre vinculadas a comunicaciones, es decir, las comunicaciones son el punto de sincronización.
+## Memoria distribuida
 
-El objetivo del reparto de trabajo es acelerar el trabajo. Cuando hacemos el reparto de trabajo, debemos de tener algo claro y es que el resultado en secuencial verificado debe ser exactamente igual al resultado en paralelo.
+```mermaid
+flowchart LR
+    A["P0: datos y memoria propios"] <-->|mensajes| B["P1: datos y memoria propios"]
+    B <-->|mensajes| C["P2: datos y memoria propios"]
+```
 
-> MPI está orientado a arquitecturas de memoria distribuida, pero funciona en arquitecturas de memoria compartida.
+Los procesos pueden estar en nodos distintos conectados por una red o en un mismo equipo. Cada uno conserva su memoria local. Tener una variable con el mismo nombre en varios procesos no la convierte en compartida; incluso una dirección numérica igual pertenece al espacio de su proceso.
 
-## Arquitectura de memoria distribuida
+Un clúster suele reunir nodos con varios núcleos. MPI puede ejecutar varios procesos en los distintos núcleos de un nodo. También se puede combinar MPI entre procesos con OpenMP entre los hilos de cada proceso. No hay una regla que obligue a usar un solo proceso MPI por computador.
 
-Diferentes elementos de computo que se interconectan a través de la misma red de interconexión.
+Para estudiar el algoritmo suponemos que los datos están disponibles en memoria; cuando un ejemplo incluye lectura de ficheros, esa lectura también forma parte del programa y puede influir en el tiempo total.
 
-Las comunicaciones se tienen que gestionar. Tenemos que ir intuyendo que otras cosas tenemos que envíar.
+## Un ejecutable y varios procesos
 
-Siempre habrá 1 elemento de computo que gestionará el software paralelo y tendrá que comunicarla información al resto de elementos de computo.
+En los ejemplos de la asignatura se usa el modelo SPMD: se compila un programa y se lanza en varios procesos. Todos ejecutan ese programa, pero sus rangos y condiciones determinan qué parte del trabajo realiza cada uno.
 
-Únicamente desarrollaremos en esta asignatura 1 solo código, es decir un solo compilar.
+```mermaid
+flowchart TD
+    A["Un fuente C"] --> B["mpicc: un ejecutable"]
+    B --> C["mpiexec: lanzar procesos"]
+    C --> P0["P0: trabajo segun rank"]
+    C --> P1["P1: trabajo segun rank"]
+    C --> P2["P2: trabajo segun rank"]
+```
 
-Y será independientemente del tamaño del problema a resolver.
+Compilar no inicia la ejecución paralela. El lanzador y el entorno MPI ponen en marcha los procesos y hacen posible su comunicación.
 
-Ese compilado hará casi lo mismo en todos los computadores.
+Es frecuente elegir P0 para leer la entrada y reunir resultados porque el rango 0 existe en cualquier comunicador no vacío. Es una decisión de diseño; MPI no exige un coordinador central y también permite otros patrones.
 
-Para explotar el paralelismo de arquitecturas de memoria distribuida tenemos varios modelos:
-* Paso de mensajes: el que vamos a utilizar en MPI
-* Datos paralelos
-* Plataformas o liberías que simulan memoria compartida (si simula memoria compartida es porque desarrollar para memoria compartida es más fácil? -> es más rápido. el motivo por que aprendemos mpi primero, es porque en mpi tenemos que saber todo lo que está pasando: puntos de distribución, reparto de trabajo, etc.)
-* Podríamos utilizar comunicaciones a más bajo nivel TCP, UDP, ...? -> si
+## Modelos de programación
 
-Lógicamente distribuida y físicamente distribuida.
+### Paso de mensajes
 
-## Otros Modelos
+Los procesos comunican datos explícitamente. En la comunicación punto a punto, un emisor hace Send y un receptor hace Recv. Podemos ver en el programa qué se transmite, a quién y en qué momento.
 
-### Datos Paralelos
+### Paralelismo de datos
 
-Solo a aplicaciones que se centran en operaciones de conjuntos de datos. Tiene que ser que mi aplicación esté destinada al procesamiento de datos y que tengamos estructuras que puedan explotar estos modelos. Van a ser muchos de los ejemplos que se verán en pasos de mensajes.
+Se aplica una operación a porciones diferentes de un conjunto de datos. Puede implementarse sobre memoria distribuida o compartida: no es una propiedad exclusiva de una arquitectura ni una alternativa incompatible con MPI.
 
-Cada proceso trabajará sobre un conjunto de datos, pero la diferencia es que aquí cada tarea va a realizar la misma operación a su sección de datos, si o si.
+HPF significa **High Performance Fortran** y es un ejemplo histórico de lenguaje orientado al paralelismo de datos. No se puede afirmar que Fortran sea siempre más eficiente que C: influyen el algoritmo, el compilador y la representación de los datos.
 
-El modelo de datos paralelos no es exclusivo en arquitecturas de memoria distribuida. Las comounicaciones cuando trabajo en memoria compartida las comunicaciones se realizan a través de la memoria global.
+### Espacio de direcciones global sobre memoria distribuida
 
-En memoria distribuida cada computador tiene que almacenar en su memoria los datos con los que va a trabajar.
+Modelos como PGAS presentan un espacio de direcciones global particionado. UPC significa **Unified Parallel C** y es un ejemplo de este enfoque.
 
-Se trabaja con las estructuras de datos paralelas se utilizan liberías o directivas como HPF (hyper no se que fortran). Hay lenguajes computacionalmente más eficientes que C sin llegar a ensamblador, como fortran.
+Cuatro nodos con 64 GB cada uno tienen 256 GB de capacidad agregada, pero eso no crea automáticamente una memoria de acceso uniforme. Acceder a datos remotos puede necesitar comunicación y ser más costoso que un acceso local. La localidad y el balanceo siguen siendo importantes.
 
-### Librerías uso en arquitecturas de memorias distribuida sin comunicaciones explicitas
+La abstracción facilita algunos programas, pero puede ocultar costes si el diseño no considera dónde residen los datos. Su conveniencia depende del problema; no es correcto declarar que siempre será un modelo no óptimo.
 
+### Herramientas de menor nivel
 
-Podemos suponer que en una memoria distribuida con 4 procesos, cada uno tiene 64 GB, podríamos considerarlo como una sola de 64x4, donde el desarrollador solo controla el acceso a memoria. 
+Podrían usarse protocolos como TCP/UDP y herramientas del sistema operativo, pero habría que gestionar más detalles del transporte y la ejecución. MPI proporciona una interfaz de comunicación de nivel superior. La afinidad indica en qué recursos puede ejecutarse un trabajador; no sustituye al diseño del reparto.
 
-Modelamos como un espacio de memoria único. El objetivo normalmente es abstraer a arquitectura híbrida (DM + SM).
+## Qué es MPI y qué garantiza
 
-El más utilizado UPC, peor hay varias alternativas disponibles. Esto depende del administrador de sistema, HPC, instala este tipo de recursos.
+MPI significa **Message Passing Interface**. Es un estándar desarrollado por el **MPI Forum**, no simplemente una biblioteca sin organismo responsable. Implementaciones como MPICH y Open MPI ofrecen esa interfaz. Microsoft MPI es una implementación para Windows; LAM/MPI es una referencia histórica.
 
-Cuando accedo a una variable, no sé en que memoria de que proceso está. Que pasa si accedo a una variable que no está en mi memoria? Pues que esa librería que tengo que me abstrae el sistema, se encarga de solicitar la comunicación para traer el dato de la otra memoria a donde estamos, es decir, establece una comunicación.
+El estándar define bindings para C y Fortran. Python puede utilizar MPI mediante bibliotecas como mpi4py; eso no convierte Python en un binding normativo equivalente al de C.
 
-El acceso se ha encarecido mucho. Yo sé cuando se produce eso? No. Porque tengo abstraido ese mapa de memoria.
+MPI abstrae detalles de la red y facilita escribir programas portables. La portabilidad presupone tipos, búferes, llamadas y patrones de comunicación válidos.
 
-Como balanceo la carga si no tengo claro que la ejecución vaya a ser más o menos similar en función del trabajo.
+Los mensajes no se pierden arbitrariamente en una ejecución correcta, pero eso no elimina los errores: pueden existir rangos inválidos, tipos incompatibles, falta de memoria, bloqueos o fallos del entorno. Las funciones devuelven códigos de error y el manejador predeterminado puede abortar. No hay que suponer que toda aplicación MPI se recupera de la caída de un proceso.
 
-Sabiendo esto, sabemos que para nosotros este modelo no será óptimo.
+### Rendimiento y escalabilidad
 
-En este modelo, es físicamente distribuida pero lógicamente es solo una.
+La escalabilidad depende del algoritmo, tamaño del problema, número de recursos, balanceo, memoria y red. No basta con comparar cuántos equipos se pueden conectar.
 
-Aquí, si accedo a una posición que está en otra zona física tardará más que si está en la misma.
+Una red de barras cruzadas puede ser costosa al crecer; una red Ethernet también puede sufrir congestión y limitaciones de ancho de banda. No se puede concluir que una sea siempre más escalable ni que añadir conexiones no degrade las prestaciones.
 
-### Podríamos utilizar herramientas de más o menos nivel?
+## Mensajes y sincronización
 
-* S.O -> hilos, thread placement in OpenMP, podemos decidir en que core del sistema se ejecutará cada hilo. (Lo que se ve en la asignatura está un poco por encima de esto, pero lo usamos practicamente al mismo nivel)
-* Protocolos de comunicación TCP, UDP -> Se tienen que controlar las comunicaciones
-* OpenCL
+En los ejemplos con tipos básicos, un mensaje transmite una secuencia de elementos contiguos. MPI también permite tipos derivados que describen posiciones no contiguas; no los necesitamos para estos primeros ejercicios.
 
-# Porque MPI -> Message Passing Interface
-Estándar de facto para arquitecturas de memoria distribuida, es decir, no hay un organismo detrás y es una herramienta que se utiliza mayoritariamente por la comunidad.
+El nombre de la variable no identifica el mensaje. Para emparejarlo importan emisor, destinatario, etiqueta y contexto del comunicador. Los tipos deben ser compatibles y la recepción debe tener capacidad suficiente.
 
-En cuanto al rendimiento, se consigue un buen rendimiento al ocultarle al usuario las características propias de la red. Es decir, facilita mucho el desarrollo.
+Send y Recv no tienen que empezar al mismo instante. Un Send estándar bloqueante puede usar almacenamiento interno o esperar una recepción, según la implementación y el mensaje. No se debe depender de que siempre exista espacio en un búfer interno.
 
-Además, es escalable (como se comporta el sistema paralelo a medida que aumentan la cantidad de recursos utilizados). Como se comporta cualquier cosa cuando aumento las prestaciones o las demandas del sistema. Depende de grupos y comunicaciones colectivas.
+Al terminar Send, el emisor puede reutilizar su búfer; no significa que el receptor ya haya completado todo su cálculo. Al terminar Recv, el receptor tiene los datos recibidos en su búfer.
 
-> Cuando necesito mas como se comporta?
+### Comunicación unilateral
 
-> Ejemplo: Red de barras cruzadas. El sistema con esta red es mas escalable o menos que una gigabit ethernet? Es menos escalable. Porque la red es muy compleja y admite un X numero de nodos conectados. Gigabit ethernet permite cientos de decenas de dispositivos conectados en la red propia. Esa red, es mas escalable que la red de barras cruzadas en un sistema hpc. Porque admite mas conexiones sin degradar las prestaciones.
+Las operaciones one-sided de MPI permiten acceder a una ventana de memoria de otro proceso sin un Recv por cada transferencia. Siguen necesitando creación de ventanas y reglas de sincronización/completado. No significan que nunca haya espera ni que el otro proceso no participe en la preparación.
 
-Un sistema paralelo lo es todo:
-* hardware
-* software
-* herramientas que utilizo
+Este tema se menciona para distinguir modelos; aquí trabajamos los algoritmos con comunicación explícita Send/Recv.
 
-MPI también es formal, es decir,el comprotamiento es completamente definido, con lo cual se podrá trasladar a otro sistema.
+## Diseño paralelo y descomposición de dominio
 
-Es seguro, las comunicaciones se llevan a cabo si o si. No pienso si se hacen o no. No pienso que el mal funcionamiento es debido a un problema en la comunicación. Codifico una función de envio y sé que ese envio se ha realizado. No se hace el control de errores.
+El diseño debe responder:
 
-Si se cae un computador NO me recupero. Como no me puedo recuperar, mi ejecución no habrá terminado correctamente, MPI lo detectará y abortará y lo tendrá que solventar el administrador del equipo. Si ha pasado eso, se aborta, se arregla el sistema y se vuelve arrancar.
+1. ¿Qué datos y operaciones se reparten?
+2. ¿Qué proceso necesita cada dato?
+3. ¿Cuándo deben intercambiarse datos o resultados?
+4. ¿Qué memoria necesita cada participante?
+5. ¿Cómo se valida y mide el resultado?
 
-Los lenguajes son: C, Fortran y Python.
+Podemos distribuir una matriz por bloques de filas, bloques de columnas, filas cíclicas o bloques cíclicos. El reparto cíclico bidimensional aparece en bibliotecas de álgebra paralela. Ninguna distribución garantiza por sí sola el balanceo: importan los costes de las operaciones y la naturaleza de los datos.
 
-## Implementaciones de MPI (libres)
-* MPICH
-* LAM/MPI
-* OpenMPI
-* MPI-MS (.NET)
-* ...
+![Distribuciones de dominio](descomp_dominio.png)
 
+### Ejemplo: contar elementos pares
 
-## MPI está enfocado a arquitecturas de memoria distribuidas en las cuales (pensamos en computadores distintos con la misma red de interconexión):
+P0 puede leer una matriz y distribuir bloques. Cada proceso cuenta los pares de su bloque y se combinan los contadores:
 
-Disponemos de un conjunto de procesadores con su propia memoria (distintos computadores con una misma red de interconexión)
+```mermaid
+flowchart TD
+    A["P0: matriz de entrada"] --> B["P0: bloque A"]
+    A --> C["P1: bloque B"]
+    A --> D["P2: bloque C"]
+    B --> B1["contador local 0"]
+    C --> C1["contador local 1"]
+    D --> D1["contador local 2"]
+    B1 --> R["P0: suma de los contadores"]
+    C1 --> R
+    D1 --> R
+```
 
-Desarrollamos un único código con un solo compilado. Será este el que lanzamos en todos los procesos. Yo sé que puedo solicitarle al SO que me ejecute una cosa. Si tengo una ejecución con MPI, tendré que ejecutarlo en todos.
+![Reparto de bloques](descomp_dominio2.png)
 
-> El compilado es el mismo para todos, pero no hará lo mismo en todos.
+Cada proceso puede empezar su cómputo cuando tenga sus propios datos y se cumplan sus dependencias; no siempre hace falta esperar a que todos hayan recibido sus bloques.
 
-Un proceso se ejecuta en un procesador. Un procesador debe ejecutar un solo proceso. Pensamos esto así.
+![Resultados parciales](descomp_dominio3.png)
 
-Cuando MPI haya lanzado todos esos procesos y MPI me diga que son capaces de interocmunicarse a travez de la red d einterconexión, ya podrá pensar en que pueden intercambiar información. Las comunicaciones las veo, son instrucciones que se ejecutan.
+Para sumar contadores, P0 solo necesita un acumulador y una variable temporal para las recepciones. No está obligado a guardar todos los bloques ni todos los resultados parciales a la vez. Si también lee la matriz completa, la reserva de entrada es otra necesidad distinta.
 
-> Sabemos que son hibridos y que en cada nodo hay muchos cores. Los cores, la potencia del computo que proporciona, se explotará con OpenMP si es necesario, pero no con MPI.
+La ley de Amdahl describe una cota ideal debida a la parte secuencial. Los costes de comunicación y coordinación pueden hacer que el tiempo deje de mejorar o incluso aumente con más procesos.
 
-Las comunicaciones en MPI me sirven para intercambiar datos y para realizar las sincronizaciones.
+## Repaso
 
-## Modelo de MPI
+- MPI trabaja con procesos; OpenMP, con hilos dentro de memoria compartida.
+- El proceso 0 puede coordinar un ejemplo, pero no es una exigencia del estándar.
+- El patrón de comunicación determina parte de las necesidades de memoria.
+- Un tamaño de mensaje se expresa mediante cantidad de elementos y tipo.
+- El cómputo secuencial sirve como referencia; el resultado y el rendimiento se comprueban por separado.
 
-Cada una de las tareas tiene su propio mapa de memoria.
+Referencia: [MPI Forum](https://www.mpi-forum.org/docs/) y [sincronización one-sided](https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node238.htm).
 
-> Donde residen los datos que procesamos? Estos residen en la memoria. Yo empiezo a contar mi trabajo de paralelización cuando tengo mis datos en memoria. De donde provienen? Puedo acelerar como vienen? De estas dos cosas no me preocupo en esta asignatura. Los datos a procesar estan en memoria si o si.
-
-Que es un puntero? Una dirección de memoria. Cuando desarrollemos en MPI paracerá lo mismo, si hablamos de dos procesos, pero no lo será. Da igual que tenga el mismo nombre de variable. Será un puntero, dirección de memoria, distinta.
-
-Los datos se intercambian enviando y recibiendo mensajes.
-
-> Los mensjaes comunican datos, y estos se guardan en memoria. **Un mensaje es un conjunto de datos que estan contiguos en memoria.**
-> En un modelo como MPI no se pierden los datos. Da igual cuando se realice la comunicación, si se hace un envio la comunicación se hará. Siempre yc uando el mensaje sea el mismo, es decir, si enviamos 100 enteros, el receptor epsera esos 100 enteros.
-
-El intercambio de datos normalmente requiere trabajo cooperativo (intervienen emisor y receptor). No será a la misma vez. Si yo quiero realizar una comunicación tendremos, emisor, receptor, canal y mensaje. Yo tengo que enviar y el tiene que recibir. Esto es desde el punto de vista del código.
-
-> Que pasa si están haciendo otra cosa? (emisor o receptor) Se esperan.
-
-### Intercambio de datos puede ser:
-
-* Cooperativo: intevienen todos los elementos en el proceso del intercambio de datos.
-* One sided (MPI-2): solo interviene uno de los dos en la comunicación (emisor, receptor)
-    Se produce la comunicación, en el código no veo la función de recepción, existe todo, pero no vemos la función de sincronización ni la participación de ambas partes.
-
-En una comunicación puede haber más de un emisor? Si pueden haberlo pero eso ocasiona un problema y el sistema se tendría que encargar de solucionar eso, es decir no es ideal.
-
-En una comunicación puede haber más de un receptor? Si, todos los que uno quiera.
-
-### Diferencia entre MPI 1 y MPI-OneSided 
-
-MPI 1 se tiene que esperar a que el receptor esté list. MPI One sided no se espera. Simplemente envía. No sabemos que está ejecutando el otro proceos porque no lo vamos a utilizar (el proceso actual).
-
-En One-Sided solo veo la instrucción de comunicación en uno de ellos, por lo que no intervenimos los dos en la comunicación. 
-
-Como se que la comunicación se ha llevado a cabo? Hay mecanismos para poder recuperar la sincronización en una comunicación one-sided. 
-
-> Esto no lo vamos a ver a nivel de código
-
-# Diseño paralelo
-
-Decidimos lo que hacer en código. 
-
-* Cómo reparto del trabajo?
-* Cómo realizo la sincronización?
-* Hay dependencias?
-
-Cuando yo hago un diseño paralelo, de ese diseño que yo he hecho, tiene que provenir las cosas que tengo que codificar.
-Tengo que saber que cosas tengo que codificar, o conocer lo que vamos a llamar el patrón de comunicaciones.
-
-* Cuantas comunicaciones
-* De que proceso a que proceso
-
-De mi diseño paralelo viene el patrón de comunicaciones y del patrón de comunicaciones viene la reserva de memoria, es decir, memoria dinámica.
-
-Del patrón de comunicación, viene directamente pero no inferido, la reserva de memoria que es un grupo de recursos que depende del tamaño del problema.
-
-
-# Descomposición de dominio
-
-hay varias opciones para repartirlo:
-
-* bloques por filas
-* bloques por columnas
-* ciclico, por fila
-* ciclico, por bloques
-
-todas son posible por el punto de vista de balanceo de carga.
-
-sin embargo, la complejidad de la gestión varía.
-
-![descomposicion de dominio](descomp_dominio.png)
-
-Ciclica 2D es la estructura de distribución que se utiliza en librerías de altas prestaciones en álgebra.
-
-En el caso del reparto por bloques, existe la posibilidad de que la carga no esté balanceada por la naturaleza de los datos.
-Dependiendo del algoritmo de los sistemas de descomposición, se puede relizar un desbalanceo de carga por la naturaleza de los datos.
-
-Ahora mismo nos interesa buscar una forma de repartir el trabajo y acelerar el coste computacional:
-
-Si somos 3 procesos, somos: p0, p1, p2
-
-Si somos 5 procesos, somos: p0, p1, p2, p3, p4
-
-El proceso 0 siempre exste. Por eso el proceso p0 será el que accede al fichero. Será el que obtiene los datos y el que realiza toda esa gestión.
-
-Siempre que el proceso 0
-
-![descomposición de dominio](descomp_dominio2.png)
-
-Cuando ya tenga enviado el patrón de comunicaciones...
-
-Ley de Amdhal, siempre hay cosas que tenga que hacer en secuencial, habrá cosas que impedirán que el speed up sea monotonamente creciente.
-
-En el momento en el que cada uno tenga sus datos, ya se podrá empezar a trabajar
-
-![alt text](descomp_dominio3.png)
-
-Lo que sumen esas cantidades es el resultado que yo busco. Como lo obtengo si está cada uno en un computador distinto?
-Tengo otro proceso de comunicación donde el proceso 1 envía la comunicación al 0 y el proceso 2 al 0. 
-Por lo tanto, comunicamos resultados y los juntamos en el 0.
-
-Que podría pasar?
-
-La primera, es que yo he recibido información, la proceso y no la guardo.
-
-El proceso 0 necesita guardar toda la información, por lo que el proceso 0 tendrá que hacer una reserva de memoria a corde con el tamaño del problema de todos.
-
-
+[Siguiente clase: 22 de septiembre](22_septiembre.md).

@@ -72,11 +72,12 @@ datos ──> [ V1: tam elementos ][ V2: tam elementos ]
 ### Dirección y valor
 
 ```c
-int *v = /* inicio del vector */;
-v[2]       /* valor del tercer int */
-*(v + 2)   /* el mismo valor */
-&v[2]      /* dirección del tercer int */
-v + 2      /* la misma dirección */
+int datos[3] = {10, 20, 30};
+int *v = datos;
+int valor = v[2];             /* valor del tercer int: 30 */
+int mismo_valor = *(v + 2);   /* el mismo valor */
+int *direccion = &v[2];      /* dirección del tercer int */
+int *misma_direccion = v + 2; /* la misma dirección */
 ```
 
 En `fread(&v[i], sizeof v[i], 1, f)`, `&` es necesario porque `fread` necesita una dirección donde escribir, no el valor actual de `v[i]`.
@@ -96,7 +97,7 @@ En general `v2 = v1 + tam`. El desplazamiento en bytes es `tam * sizeof(int)`.
 
 ### Leer y reducir
 
-Una estrategia MPI para sumar valores pares sería: cada proceso cuenta pares en su bloque local, después todos aportan un contador a `MPI_Reduce` con operación suma y la raíz recibe el total. Para el máximo, la operación colectiva correspondiente es máximo.
+Una estrategia MPI para contar elementos pares sería: cada proceso cuenta pares en su bloque local, después todos aportan un contador a `MPI_Reduce` con operación suma y la raíz recibe el total. Para sumar los valores pares, cada proceso aporta la suma local de esos valores: contar y sumar son problemas distintos. Para el máximo, la operación colectiva correspondiente es máximo.
 
 ## 3. Errores que debes detectar rápido
 
@@ -130,11 +131,11 @@ Intenta responder sin mirar la clave.
 1. `v[1]` y `*(v+1)` son el valor; `&v[1]` y `v+1` son su dirección.
 2. `3 * sizeof(int) = 12` bytes.
 3. `v1 = datos`, `v2 = datos + tam`; se libera `datos` una vez.
-4. El programa intenta usar un flujo nulo y el comportamiento puede fallar; hay que comprobar `f` antes de leer.
+4. Usar un flujo nulo en fread tiene comportamiento indefinido; hay que comprobar `f` antes de leer.
 5. La posición 205 del bloque: `v2[5]`, siempre que el bloque contenga primero V1[0..199] y luego V2[0..199].
 6. El puntero `char*` escribe un byte de la representación, no los bytes completos del `int`.
 7. La dirección contiene objetos `int`, no un objeto `double`; el acceso puede violar reglas de tipo y alineación.
-8. Procesos emisor/destinatario, etiqueta, comunicador y cantidad/tipo compatibles.
+8. Emisor/destinatario, etiqueta y comunicador/contexto identifican el mensaje. Además, los tipos deben ser compatibles y la recepción tener capacidad suficiente; su count puede ser mayor que el del envío.
 9. `Reduce` deja el resultado en la raíz; `Allreduce` hace que todos lo reciban.
 10. `1 / 0.2 = 5` como máximo ideal según Amdahl.
 
@@ -148,4 +149,8 @@ Intenta responder sin mirar la clave.
 
 ## Temario incluido en esta edición
 
-Fundamentos de paralelismo, rendimiento, memoria dinámica, ficheros binarios, vectores y punteros; modelo de memoria distribuida; MPI inicialización, identificación, envío, recepción, broadcast, reduce y allreduce. Se ampliará con los siguientes temas de clase.
+Fundamentos de paralelismo, rendimiento, memoria dinámica, ficheros binarios, vectores y punteros; modelo de memoria distribuida; MPI inicialización, identificación, envío, recepción y colectivas hasta el 6 de octubre.
+
+En [las explicaciones de colectivas](../Apuntes%20Clase/MPI/Funciones%20colectivas/README.md), repasa: Gather reúne bloques por rango; Gatherv admite tamaños y desplazamientos distintos; Scatter y Scatterv reparten bloques; Scan calcula prefijos inclusivos; Reduce_scatter reduce y reparte segmentos; Barrier espera a que todos lleguen. Las [versiones Send/Recv](../Apuntes%20Clase/MPI/Funciones%20colectivas/Send_Recv/README.md) muestran algoritmos didácticos.
+
+Para comprobarte: ¿por qué Scan no cambia el count entre procesos? ¿Cuánto espacio requiere Gatherv si hay huecos? ¿Por qué MPI_Finalize no arregla comunicaciones pendientes? Consulta la [revisión conceptual](Revision_conceptual_para_profesor.md) y la [clase del 6 de octubre](../Apuntes%20Clase/MPI/06_octubre.md).

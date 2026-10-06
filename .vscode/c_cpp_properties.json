@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "compilerPath": "C:/MinGW/bin/gcc.exe",
+            "intelliSenseMode": "windows-gcc-x86",
+            "includePath": [
+                "${workspaceFolder}/.vscode/mpi-intellisense",
+                "${workspaceFolder}"
+            ],
+            "cStandard": "c99"
+        },
+        {
+            "name": "Linux",
+            "compilerPath": "/usr/bin/mpicc",
+            "intelliSenseMode": "linux-gcc-x64",
+            "includePath": [
+                "${workspaceFolder}"
+            ],
+            "cStandard": "c99"
+        }
+    ],
+    "version": 4
+}

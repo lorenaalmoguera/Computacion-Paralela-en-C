@@ -7,12 +7,18 @@ Apuntes organizados para acompañar las clases y prácticas. La ruta empieza por
 1. [Fundamentos de arquitectura y paralelismo](01_fundamentos.md)
 2. [Programación secuencial en C](02_programacion_secuencial.md)
 3. [MPI y memoria distribuida](03_mpi.md)
-4. [Study guide / guía de estudio](Study_Guide_Computacion_Paralela_2026-2027.docx)
+4. [Study guide / guía de estudio: edición anterior en Word](Study_Guide_Computacion_Paralela_2026-2027.docx)
 5. [Study guide en Markdown](Study_Guide_Computacion_Paralela_2026-2027.md)
 
 ## Alcance actual
 
-Esta primera versión reúne los apuntes disponibles de septiembre de 2026 y las prácticas secuenciales P0_T1, P0_T2 y P0_T3. En MPI cubre los conceptos y funciones anotados hasta el 29 de septiembre: procesos, comunicadores, envío y recepción, operaciones colectivas y reparto del trabajo. Se ampliará conforme avancemos en clase.
+Esta revisión reúne los apuntes disponibles hasta el 6 de octubre de 2026 y las prácticas secuenciales P0_T1, P0_T2 y P0_T3. En MPI cubre procesos, comunicadores, envío y recepción, colectivas y reparto del trabajo. La guía Markdown contiene las correcciones actuales; la versión Word conserva la edición anterior.
+
+- [UD1: 11 de septiembre, revisión del PDF](../Apuntes%20Clase/UD1/11_septiembre_revisado.md).
+- [MPI: 29 de septiembre, revisión del PDF](../Apuntes%20Clase/MPI/29_septiembre_revisado.md).
+- [MPI: 6 de octubre](../Apuntes%20Clase/MPI/06_octubre.md).
+- [Diagramas, ejemplos y colectivas con Send/Recv](../Apuntes%20Clase/MPI/Funciones%20colectivas/README.md).
+- [Correcciones propuestas para consultar al profesor](Revision_conceptual_para_profesor.md).
 
 ## Convenciones
 
