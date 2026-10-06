@@ -12,6 +12,7 @@ Los diagramas muestran resultados o algoritmos didácticos. No describen necesar
 - [MPI_Gather: bloques iguales](#mpi_gather)
 - [MPI_Gatherv: bloques variables](#mpi_gatherv)
 - [MPI_Scatter: repartir bloques iguales](#mpi_scatter)
+- [MPI_Scatterv: repartir bloques variables](#mpi_scatterv)
 - [Una reserva para dos vectores](#memoria)
 - [Relación con Send y Recv](#punto-a-punto)
 - [Referencias](#referencias)
@@ -401,7 +402,113 @@ Consulta el [ejemplo completo de Scatter con Send/Recv](Funciones%20colectivas/S
 
 [Volver a la navegación](#navegacion)
 
+<a id="mpi_scatterv"></a>
+
+## MPI_Scatterv: repartir bloques de tamaños distintos
+
+### Diagrama con cuatro procesos y raíz P0
+
+```mermaid
+flowchart TD
+    R["P0 tiene [10 | 20,21 | 30,31,32 | 40,41,42,43]"] -->|"1 entero desde indice 0"| A["P0 recibe [10]"]
+    R -->|"2 enteros desde indice 1"| B["P1 recibe [20,21]"]
+    R -->|"3 enteros desde indice 3"| C["P2 recibe [30,31,32]"]
+    R -->|"4 enteros desde indice 6"| D["P3 recibe [40,41,42,43]"]
+```
+
+Scatterv permite elegir la cantidad y la posición inicial del bloque que recibe cada rango. La raíz utiliza dos tablas, con una entrada por proceso:
+
+| Rango destinatario | Cantidad enviada | Desplazamiento | Posiciones en la raíz |
+|---|---:|---:|---|
+| P0 | 1 | 0 | 0 |
+| P1 | 2 | 1 | 1–2 |
+| P2 | 3 | 3 | 3–5 |
+| P3 | 4 | 6 | 6–9 |
+
+**Lectura:** cada proceso recibe su bloque al inicio del búfer local. Los desplazamientos se aplican al búfer de envío de la raíz, no al de recepción.
+
+### Llamada y ejemplo
+
+```c
+err = MPI_Scatterv(
+    DatosEnvio, NumDatosEnvio, Desplazamientos, TipoDatosEnvio,
+    DatosRecepcion, NumDatosRecepcion, TipoDatosRecepcion,
+    Raiz, comunicador
+);
+```
+
+Aquí `NumDatosEnvio` y `Desplazamientos` son arrays; `NumDatosRecepcion` es un entero local. Los argumentos de envío solo son significativos en la raíz. Todos llaman a la operación con la misma raíz y comunicador.
+
+Con cuatro procesos, MPI inicializado y `rank` obtenido:
+
+```c
+int cantidades[4] = {1, 2, 3, 4};
+int desplazamientos[4] = {0, 1, 3, 6};
+int datos[10];
+int local[4]; /* Capacidad maxima; cada rango utiliza solo n posiciones. */
+int n = rank + 1;
+
+if (rank == 0) {
+    int entrada[10] = {10, 20, 21, 30, 31, 32, 40, 41, 42, 43};
+    for (int i = 0; i < 10; i++) datos[i] = entrada[i];
+}
+
+MPI_Scatterv(datos, cantidades, desplazamientos, MPI_INT,
+             local, n, MPI_INT, 0, MPI_COMM_WORLD);
+
+printf("P%d recibe:", rank);
+for (int i = 0; i < n; i++) printf(" %d", local[i]);
+printf("\n");
+```
+
+En este ejemplo, cada rango conoce su cantidad por la regla `n = rank + 1`. Si las cantidades las decide la raíz durante la ejecución, primero debe comunicar a cada receptor cuántos elementos recibirá para que prepare su búfer. Scatterv no comunica esa información automáticamente.
+
+### Desplazamientos, huecos y tipos
+
+Los desplazamientos se expresan en extensiones de `TipoDatosEnvio`; con MPI_INT son posiciones de enteros. Para este caso, con desplazamientos no negativos, la reserva debe cubrir hasta `max(desplazamientos[i] + cantidades[i])`, considerando cantidades positivas.
+
+Por ejemplo, si tres procesos reciben dos enteros cada uno y los desplazamientos son `{0, 4, 6}`:
+
+```text
+indices en la raiz:  0  1  2  3  4  5  6  7
+datos:             10 11 99 99 20 21 30 31
+destinatario:        P0   hueco   P1    P2
+```
+
+Se necesitan ocho posiciones para enviar seis enteros. Las posiciones 2 y 3 no se envían; sus valores no aparecen en los receptores. Los bloques deben quedar dentro de la reserva y no provocar lecturas repetidas de una misma posición.
+
+La cantidad y el tipo de cada envío deben describir la misma secuencia de tipos básicos que la recepción correspondiente. Con MPI_INT en ambos lados, `n` coincide con `cantidades[rank]`. Una reserva local de cuatro enteros permite recibir un bloque menor, pero el argumento de cantidad de esta colectiva debe describir ese bloque, no toda la capacidad reservada.
+
+### Relación con Send y Recv
+
+Como alternativa a la llamada anterior, usando los mismos datos y cuatro procesos:
+
+```c
+if (rank == 0) {
+    for (int i = 0; i < cantidades[0]; i++)
+        local[i] = datos[desplazamientos[0] + i];
+
+    for (int destino = 1; destino < 4; destino++)
+        MPI_Send(datos + desplazamientos[destino],
+                 cantidades[destino], MPI_INT, destino, 211,
+                 MPI_COMM_WORLD);
+} else {
+    MPI_Recv(local, n, MPI_INT, 0, 211, MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+}
+```
+
+La raíz copia su bloque y envía a cada rango la cantidad indicada desde su desplazamiento. Cada receptor espera su bloque de la raíz. Esta alternativa muestra la funcionalidad; la biblioteca MPI puede utilizar otro algoritmo interno.
+
+Cambiar la raíz a P1 exige inicializar los datos allí, cambiar las ramas y los orígenes de los mensajes, y usar raíz 1 en la colectiva. Las tablas siguen indexadas por el rango destinatario: la entrada 0 corresponde a P0.
+
+Consulta el [ejemplo completo de Scatterv con Send/Recv](Funciones%20colectivas/Send_Recv/07_Scatterv.md). La definición y las reglas de tipos están en [MPI_Scatterv de Open MPI](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Scatterv.3.html).
+
+[Volver a la navegación](#navegacion)
+
+
 <a id="memoria"></a>
+
 
 ## Una reserva de memoria para dos vectores
 
@@ -497,6 +604,7 @@ Para estudiar los algoritmos completos, consulta:
 - [Gather con Send/Recv](Funciones%20colectivas/Send_Recv/04_Gather.md).
 - [Gatherv con Send/Recv](Funciones%20colectivas/Send_Recv/05_Gatherv.md).
 - [Scatter con Send/Recv](Funciones%20colectivas/Send_Recv/06_Scatter.md).
+- [Scatterv con Send/Recv](Funciones%20colectivas/Send_Recv/07_Scatterv.md).
 - [Allreduce con Send/Recv](Funciones%20colectivas/Send_Recv/03_Allreduce.md).
 - [Índice de funciones colectivas](Funciones%20colectivas/README.md).
 
