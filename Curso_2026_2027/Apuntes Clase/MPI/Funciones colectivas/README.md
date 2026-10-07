@@ -4,18 +4,18 @@ Apuntes con diagramas Mermaid, explicaciones y ejemplos completos en C. Si el vi
 
 ## Índice
 
-| Función | Qué hace | Resultado |
-|---|---|---|
-| [`MPI_Bcast`](01_Bcast.md) | Difunde el mismo dato desde la raíz a todos los procesos. | En todos, según la operación |
-| [`MPI_Reduce`](02_Reduce.md) | Combina las contribuciones mediante una operación y deja el resultado en la raíz. | En la raíz |
-| [`MPI_Allreduce`](03_Allreduce.md) | Reduce las contribuciones y devuelve el resultado a todos. | En todos, según la operación |
-| [`MPI_Gather`](04_Gather.md) | Reúne bloques de igual tamaño en la raíz, ordenados por rango. | En la raíz |
-| [`MPI_Gatherv`](05_Gatherv.md) | Reúne bloques de diferentes tamaños en la raíz. | En la raíz |
-| [`MPI_Scatter`](06_Scatter.md) | Divide los datos de la raíz en bloques iguales y entrega uno a cada proceso. | En todos, según la operación |
-| [`MPI_Scatterv`](07_Scatterv.md) | Reparte bloques de tamaños diferentes desde la raíz. | En todos, según la operación |
-| [`MPI_Reduce_scatter`](08_Reduce_scatter.md) | Primero reduce vectores elemento a elemento y después reparte el vector reducido. | En todos, según la operación |
-| [`MPI_Barrier`](09_Barrier.md) | Sincroniza: nadie termina la llamada hasta que todos han entrado en ella. | Sincronización |
-| [`MPI_Scan`](10_Scan.md) | Calcula una reducción acumulada inclusiva siguiendo el orden de los rangos. | En todos, según la operación |
+| Función | Qué hace | Resultado | Implementación con `Send` y `Recv` |
+|---|---|---|---|
+| [`MPI_Bcast`](01_Bcast.md) | Difunde el mismo dato desde la raíz a todos los procesos. | En todos, según la operación | [Explicación](Send_Recv/01_Bcast.md) · [Código C](Send_Recv/01_Bcast.c) |
+| [`MPI_Reduce`](02_Reduce.md) | Combina las contribuciones mediante una operación y deja el resultado en la raíz. | En la raíz | [Explicación](Send_Recv/02_Reduce.md) · [Código C](Send_Recv/02_Reduce.c) |
+| [`MPI_Allreduce`](03_Allreduce.md) | Reduce las contribuciones y devuelve el resultado a todos. | En todos, según la operación | [Explicación](Send_Recv/03_Allreduce.md) · [Código C](Send_Recv/03_Allreduce.c) |
+| [`MPI_Gather`](04_Gather.md) | Reúne bloques de igual tamaño en la raíz, ordenados por rango. | En la raíz | [Explicación](Send_Recv/04_Gather.md) · [Código C](Send_Recv/04_Gather.c) |
+| [`MPI_Gatherv`](05_Gatherv.md) | Reúne bloques de diferentes tamaños en la raíz. | En la raíz | [Explicación](Send_Recv/05_Gatherv.md) · [Código C](Send_Recv/05_Gatherv.c) |
+| [`MPI_Scatter`](06_Scatter.md) | Divide los datos de la raíz en bloques iguales y entrega uno a cada proceso. | En todos, según la operación | [Explicación](Send_Recv/06_Scatter.md) · [Código C](Send_Recv/06_Scatter.c) |
+| [`MPI_Scatterv`](07_Scatterv.md) | Reparte bloques de tamaños diferentes desde la raíz. | En todos, según la operación | [Explicación](Send_Recv/07_Scatterv.md) · [Código C](Send_Recv/07_Scatterv.c) |
+| [`MPI_Reduce_scatter`](08_Reduce_scatter.md) | Primero reduce vectores elemento a elemento y después reparte el vector reducido. | En todos, según la operación | [Explicación](Send_Recv/08_Reduce_scatter.md) · [Código C](Send_Recv/08_Reduce_scatter.c) |
+| [`MPI_Barrier`](09_Barrier.md) | Sincroniza: nadie termina la llamada hasta que todos han entrado en ella. | Sincronización | [Explicación](Send_Recv/09_Barrier.md) · [Código C](Send_Recv/09_Barrier.c) |
+| [`MPI_Scan`](10_Scan.md) | Calcula una reducción acumulada inclusiva siguiendo el orden de los rangos. | En todos, según la operación | [Explicación](Send_Recv/10_Scan.md) · [Código C](Send_Recv/10_Scan.c) |
 
 ## Reglas comunes
 

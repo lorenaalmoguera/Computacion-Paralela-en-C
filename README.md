@@ -58,6 +58,7 @@ El [índice de apuntes](Curso_2026_2027/Apuntes/README.md) organiza tres bloques
 | [03_mpi.md](Curso_2026_2027/Apuntes/03_mpi.md) | Procesos, comunicadores, mensajes, colectivas y reparto del trabajo. |
 | [Guía de estudio en Markdown](Curso_2026_2027/Apuntes/Study_Guide_Computacion_Paralela_2026-2027.md) | Repaso de conceptos, errores frecuentes y preguntas de estudio. |
 | [Guía de estudio en Word](Curso_2026_2027/Apuntes/Study_Guide_Computacion_Paralela_2026-2027.docx) | Versión de la guía en formato DOCX. |
+| [Revisión conceptual para consultar al profesor](Curso_2026_2027/Apuntes/Revision_conceptual_para_profesor.md) | Posibles errores, matices y preguntas sobre los apuntes de clase; no sustituye la confirmación docente. |
 
 Estos apuntes tienen un alcance propio; las notas de clase pueden contener temas posteriores que aún no estén incorporados al resumen.
 
@@ -65,10 +66,10 @@ Estos apuntes tienen un alcance propio; las notas de clase pueden contener temas
 
 | Ubicación | Contenido |
 |---|---|
-| [UD1](Curso_2026_2027/Apuntes%20Clase/UD1) | Notas del 8 de septiembre y PDF del 11 de septiembre. |
-| [MPI](Curso_2026_2027/Apuntes%20Clase/MPI) | Notas del 15 y 22 de septiembre, PDF del 29 de septiembre y notas del 6 de octubre. |
+| [UD1](Curso_2026_2027/Apuntes%20Clase/UD1) | Notas del 8 de septiembre, PDF original del 11 y su revisión en Markdown. |
+| [MPI](Curso_2026_2027/Apuntes%20Clase/MPI) | Notas del 15 y 22 de septiembre, PDF original y revisión del 29 de septiembre, y notas del 6 de octubre. |
 | [Concepto de repartir trabajo](Curso_2026_2027/Apuntes%20Clase/MPI/concepto_de_repartir_trabajo.md) | Explicación del reparto y la descomposición del trabajo, acompañada por las imágenes descomp_dominio*.png. |
-| [Funciones colectivas](Curso_2026_2027/Apuntes%20Clase/MPI/Funciones%20colectivas/README.md) | Diagramas Mermaid, funcionamiento, ejemplos en C y resultados esperados. |
+| [Funciones colectivas](Curso_2026_2027/Apuntes%20Clase/MPI/Funciones%20colectivas/README.md) | Diagramas Mermaid, funcionamiento, ejemplos en C y resultados esperados; cada fila enlaza también a su explicación y código Send/Recv. |
 | [Send_Recv](Curso_2026_2027/Apuntes%20Clase/MPI/Funciones%20colectivas/Send_Recv/README.md) | Las diez operaciones de los diagramas reconstruidas con mensajes punto a punto. Cada .c es independiente y muestra toda la implementación dentro de main. |
 
 Los diagramas Mermaid se visualizan en visores compatibles, incluido GitHub. Las páginas también describen los resultados en texto.
@@ -79,7 +80,7 @@ Los diagramas Mermaid se visualizan en visores compatibles, incluido GitHub. Las
 |---|---|
 | [P0-1](Curso_2026_2027/Practica/Secuencial/P0-1) | Dos vectores en un fichero binario; lectura, tamaños y comparación. Incluye README con preguntas y respuestas, y versiones con punteros y con índices. |
 | [P0-2](Curso_2026_2027/Practica/Secuencial/P0-2) | Memoria dinámica para dos vectores y búsqueda del máximo; variantes con una reserva o con dos reservas. |
-| [P0-3](Curso_2026_2027/Practica/Secuencial/P0-3) | Punteros y aritmética de punteros, con accesos mediante distintos tipos. Incluye enunciado y código. |
+| [P0-3](Curso_2026_2027/Practica/Secuencial/P0-3) | Punteros y aritmética de punteros, con accesos mediante distintos tipos. Incluye enunciado y código; la reinterpretación de un vector int como double* requiere atención porque no es portable ni segura según C estándar. |
 
 Cada carpeta contiene datos P0_T1_datos_random.bin y un ejecutable main.exe. Compila el código fuente para tu entorno. Los enunciados incluyen cuestiones sobre tamaños y accesos a memoria: comprueba los límites del fichero antes de interpretar los ejemplos como programas generales.
 
@@ -192,10 +193,11 @@ La carpeta [YouTube](YouTube) agrupa archivos que acompañan los episodios. No c
 | [EP6](YouTube/EP6) | Presentación Paralela UD2.odp. |
 | [EP7](YouTube/EP7) | Cuatro ejemplos introductorios MPI: inicio/finalización, rango, tamaño y mensajes punto a punto. |
 | [EP8](YouTube/EP8) | P0_T1: fichero binario con dos vectores, preguntas y respuestas, versiones con índices y punteros, y explicación índices vs. punteros. |
-| [EP9](YouTube/EP9) | P0_T2: enunciado, memoria dinámica con una o dos reservas y fichero de entrada. |
-| [EP10](YouTube/EP10) | Enunciado de P0_T3 sobre aritmética y tipos de punteros, con datos de entrada. No hay un .c en esta carpeta. |
+| [EP9](YouTube/EP9) | Vídeo corto sobre cómo representar funciones colectivas de MPI mediante Send/Recv, con miniatura y REF.md enlazado a los apuntes y ejemplos. |
+| [EP10](YouTube/EP10) | P0_T2: enunciado, versiones con una y dos reservas dinámicas, ejecutable y fichero de datos. |
+| [EP11](YouTube/EP11) | P0_T3: enunciado de punteros y datos binarios de entrada. El código está en la carpeta de la práctica secuencial P0-3. |
 
-EP8 y EP9 comparten ejercicios con las prácticas actuales; consulta ambas ubicaciones si buscas explicaciones complementarias.
+EP8, EP10 y EP11 acompañan ejercicios secuenciales del curso actual; consulta también las carpetas de prácticas para ver los enunciados y el código de clase.
 
 <a id="datos-y-herramientas"></a>
 
