@@ -11,12 +11,16 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    /* El fichero contiene 100 enteros; se reserva el espacio de V1. */
+    /* El fichero contiene 100 enteros; reservamos espacio para V1. */
     v1 = malloc((size_t)tam * sizeof *v1);
+    if (v1 == NULL) {
+        fprintf(stderr, "Error: no se pudo reservar memoria para V1.\n");
+        return EXIT_FAILURE;
+    }
 
     f = fopen(argv[1], "rb");
     if (f == NULL) {
-        perror("No se pudo abrir el fichero");
+        perror("Error al abrir el fichero");
         free(v1);
         return EXIT_FAILURE;
     }
@@ -32,26 +36,31 @@ int main(int argc, char *argv[]) {
         printf("V1[%d] = %d\n", i, v1[i]);
     }
 
-    /* pcharV1 apunta al mismo comienzo que V1, visto byte a byte. */
+    /* pcharV1 apunta al primer byte de V1. Solo se modifica ese byte. */
     char *pcharV1 = (char *)v1;
     *pcharV1 = 0;
-    printf("Tras poner a cero el primer byte mediante pcharV1:\n");
+    printf("\nTras escribir 0 mediante pcharV1 (un byte):\n");
     printf("*pcharV1 = %d\n", (int)*pcharV1);
     printf("V1[0] = %d\n", v1[0]);
 
-    /* pintV1 apunta al mismo primer elemento, como un int. */
+    /* pintV1 apunta al primer entero completo de V1. */
     int *pintV1 = v1;
     *pintV1 = 0;
-    printf("Tras poner a cero el primer int mediante pintV1:\n");
+    printf("\nTras escribir 0 mediante pintV1 (un int):\n");
     printf("*pintV1 = %d\n", *pintV1);
     printf("V1[0] = %d\n", v1[0]);
 
-    /* El puntero puede señalar el comienzo, pero no se debe desreferenciar:
-     * V1 contiene objetos int y acceder a ellos como double no es válido
-     * según C estándar (además, un double puede abarcar varios int).
+    /*
+     * Se hace esta escritura para observar el efecto pedido en la práctica.
+     * Es una prueba experimental: acceder a los int mediante double* no es
+     * portable según las reglas de C y el resultado depende de la plataforma
+     * y del compilador.
      */
     double *pdoubleV1 = (double *)(void *)v1;
-    printf("pdoubleV1 apunta al comienzo de V1: %p\n", (void *)pdoubleV1);
+    *pdoubleV1 = 0.0;
+    printf("\nTras escribir 0.0 mediante pdoubleV1 (un double):\n");
+    printf("*pdoubleV1 = %f\n", *pdoubleV1);
+    printf("V1[0] = %d\n", v1[0]);
 
     free(v1);
     return EXIT_SUCCESS;
