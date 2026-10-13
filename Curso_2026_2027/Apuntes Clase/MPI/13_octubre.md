@@ -489,13 +489,25 @@ Los bloques de recepción no deben solaparse: dos mensajes intentarían escribir
 | `MPI_Alltoall` | El mismo número fijo. | Bloques iguales, colocados contiguamente por rango. |
 | `MPI_Alltoallv` | Puede variar según destino y origen. | Arrays `sendcounts`, `sdispls`, `recvcounts` y `rdispls`. |
 
-# Conceptos que únicamente entrarán en evaluación teórica
+# Conceptos teóricos
 
 Puede salir en traza. La recepción puede ser bloqueante.
 ## MPI_Ssend
 Envío síncrono, el envío finaliza cuando empieza la recepción. 
 El envío finaliza cuando el receptor COMIENZA a recibir, no cuando lo recibe todo.
 
-# MPI_Bsend
+## MPI_Bsend
 Envío basado en buffer, acaba independientemente del receptor cuando la información está en el buffer.
 Los problemas los podemos tener en el buffer.
+
+## MPI_Rsend
+Acaba independiente de lo que pasa en recepción, es la función que más errores puede provocar y por tanto optimizar. Tenemos que estar seguros de que el receptor está preparado para recibir.
+
+## MPI_Recv
+Cuando se llama a esta función no se retorna hasta que se ha recibido el mensaje (si no llega nunca no retorna nunca)
+
+## MPI_Isend
+
+Una opción para intentar simultanear cómputo y comunicaciones son las funciones asíncronas (se intenta evitar que los procesos estén ociosos mientras se espera un proceso de envío o de recepción)
+
+## MPI_Irecv
