@@ -16,6 +16,10 @@ Apuntes con diagramas Mermaid, explicaciones y ejemplos completos en C. Si el vi
 | [`MPI_Reduce_scatter`](08_Reduce_scatter.md) | Primero reduce vectores elemento a elemento y después reparte el vector reducido. | En todos, según la operación | [Explicación](Send_Recv/08_Reduce_scatter.md) · [Código C](Send_Recv/08_Reduce_scatter.c) |
 | [`MPI_Barrier`](09_Barrier.md) | Sincroniza: nadie termina la llamada hasta que todos han entrado en ella. | Sincronización | [Explicación](Send_Recv/09_Barrier.md) · [Código C](Send_Recv/09_Barrier.c) |
 | [`MPI_Scan`](10_Scan.md) | Calcula una reducción acumulada inclusiva siguiendo el orden de los rangos. | En todos, según la operación | [Explicación](Send_Recv/10_Scan.md) · [Código C](Send_Recv/10_Scan.c) |
+| [`MPI_Allgather`](11_Allgather.md) | Reúne bloques iguales de todos y entrega el vector completo a todos. | En todos, por rango | [Explicación](Send_Recv/11_Allgather.md) · [Código C](Send_Recv/11_Allgather.c) |
+| [`MPI_Allgatherv`](12_Allgatherv.md) | Reúne bloques de distintos tamaños y entrega el vector completo a todos. | En todos, por rango | [Explicación](Send_Recv/12_Allgatherv.md) · [Código C](Send_Recv/12_Allgatherv.c) |
+| [`MPI_Alltoall`](13_Alltoall.md) | Intercambia bloques de igual tamaño entre cada pareja de procesos. | En todos, por origen | [Explicación](Send_Recv/13_Alltoall.md) · [Código C](Send_Recv/13_Alltoall.c) |
+| [`MPI_Alltoallv`](14_Alltoallv.md) | Intercambia bloques de tamaños distintos entre las parejas. | En todos, por origen | [Explicación](Send_Recv/14_Alltoallv.md) · [Código C](Send_Recv/14_Alltoallv.c) |
 
 ## Reglas comunes
 
@@ -43,4 +47,4 @@ Semántica contrastada con la documentación del [MPI Forum: comunicaciones cole
 
 ## Implementaciones con Send y Recv
 
-En [Send_Recv](Send_Recv/README.md) tienes las diez operaciones implementadas con mensajes punto a punto, diagramas y programas completos en C.
+En [Send_Recv](Send_Recv/README.md) tienes las catorce operaciones implementadas con mensajes punto a punto, diagramas y programas completos en C.

@@ -145,30 +145,22 @@ Referencia: [documentación oficial de Open MPI](https://docs.open-mpi.org/en/v5
 
 ## MPI_Allgather
 
+`MPI_Allgather` recopila una cantidad **igual** de datos de cada proceso y deja la concatenación ordenada por rango en el buffer de **todos** los procesos. No hay `root`: todos aportan y todos reciben.
+
 ```c
-err = MPI_Allgather(
-    void * DatosEnvio,
-    int NumDatosEnvio,
-    MPI_Datatype TipoDatosEnvio.
-    void* DatosRecepcion,
-    int NumDatosRecepcion,
-    MPI_Datatype Tipodatosrecepcion,
-    MPI_Comm comunicador
-)
+int MPI_Allgather(const void *sendbuf, int sendcount,
+                  MPI_Datatype sendtype, void *recvbuf, int recvcount,
+                  MPI_Datatype recvtype, MPI_Comm comm);
 ```
-A veces en los examenes contestamos y el profesor duda si sabemos o no lo sabemos. En el all gather decimos que todos participan, sin embargo, en el all significa que era como si se hiciese un broadcast, es decir, que el resultado de la operación lo obtendrán todos. Es por eso que desaparece el root de la función, porque no hay nadie que tenga una función diferencial.
 
-Que procesos envian datos?
-> todos
+| Argumento | Significado |
+|---|---|
+| `sendbuf`, `sendcount`, `sendtype` | Buffer local, cantidad enviada por este proceso y tipo de esos elementos. Todos envían la misma cantidad y tipo compatible. |
+| `recvbuf` | Buffer local con espacio para un bloque recibido de cada proceso. |
+| `recvcount`, `recvtype` | Cantidad y tipo que se reciben **de cada proceso**; deben concordar con lo que envía cada origen. |
+| `comm` | Comunicador del grupo participante. |
 
-Que procesos reciben datos?
-> todos
-
-Que cantidad de datos reciben?
-> todos
-
-De donde obtenemos la cantidad?
-> Del número de procesos del comunicador, de la cantidad de datos a enviar y de la cantidad de datos a recbir.
+Con `p` procesos, cada `recvbuf` necesita `p * recvcount` elementos. El bloque del rango `i` queda en la posición `i * recvcount` (en unidades del tipo recibido). Todos deben llamar a la colectiva en el mismo orden.
 
 Ejemplo
 
@@ -225,42 +217,34 @@ flowchart TB
 
 ## MPI_Allgatherv
 
-Será análogo al anterior excepto que se pueden mandar una cantidad de datos distinta.
+`MPI_Allgatherv` hace lo mismo que `MPI_Allgather`, pero cada proceso puede aportar una cantidad distinta de elementos. Cada proceso receptor proporciona sus propios arrays para describir cómo ordenar los bloques en su buffer. No hay `root` del que dependan los desplazamientos.
 
 ```c
-err = MPI_Allgatherv(
-    void * DatosEnvio,
-    int NumDatosEnvio.
-    MPI_Datatype TipoDatosEnvio,
-    void* DatosRecepcion,
-    int* NumDatosRecepcion,
-    int* Desplazamientos,
-    MPI_Datatype Tipodatosrecepcion,
-    MPI_Comm comunicador
-)
+int MPI_Allgatherv(const void *sendbuf, int sendcount,
+                   MPI_Datatype sendtype, void *recvbuf,
+                   const int recvcounts[], const int displs[],
+                   MPI_Datatype recvtype, MPI_Comm comm);
 ```
 
-Que procesos envian datos?
-> todos
+| Argumento | Significado |
+|---|---|
+| `sendbuf`, `sendcount`, `sendtype` | Datos que aporta este proceso, número de elementos y tipo. `sendcount` puede variar por proceso. |
+| `recvbuf` | Buffer local que reúne todos los bloques. Debe tener capacidad suficiente para cubrir los desplazamientos y tamaños. |
+| `recvcounts[i]` | Cuántos elementos recibir del rango `i`. En cada receptor, debe concordar con lo que ese rango envía. |
+| `displs[i]` | Posición inicial del bloque de rango `i` en `recvbuf`, medida en unidades de `recvtype`. |
+| `recvtype`, `comm` | Tipo de los datos recibidos y comunicador participante. |
 
-Que procesos reciben datos?
-> todos
+Todos envían y todos reciben la colección completa, pero cada proceso decide localmente sus `recvcounts` y `displs`. En una disposición compacta, `displs[i]` suele ser la suma de los conteos anteriores. Los huecos son válidos si hay espacio; las regiones escritas no deben solaparse.
 
-Cuantos datos recibe?
-> Todos los datos, sin embargo, cada proceso puede aportar una cantidad de datos distinta. Donde el Desplazamiento y la cantidad de datos a recibir de cada proceso será definida en dos vectores: int* NumDatosRecepcion ; int* Desplazamientos. El desplazamiento se define a partir del root.
-
-
-Para definir la cantidad de datos y de desplazamientos definiremos un array que especifique estos datos como puede ser por ejemplo:
+Para calcular conteos y desplazamientos, cada proceso puede construir arrays como estos:
 
 ```c
 for(int i = 0 ; i < 3 ; i++){
     recv_cnt[i] = 2 + i;
-    desp_cnt[i] = 4*i + 1;
+    desp_cnt[i] = 4*i + 1; // posiciones iniciales en el buffer receptor
 }
 ```
-Cuando tenemos una variable de tipo escalar, por ejemplo, el valor que puede tener en cada ejecución (es decir en cada proceso) puede ser distinta.
-
-En el ejemplo de las diapositivas se define el ejemplo con `2` recv_cnt para cada proceso. A pesar de poder poner únicamente un 2 en la función, es decir: `MPI_Allgatherv(send,2,...)` eso sería incorrecto. Deberíamos siempre de definir ese array a mandar para demostrar que entendemos el funcionamiento de la función.
+Los conteos pueden ser distintos entre rangos, por eso se pasa un array `recvcounts`, incluso cuando casualmente todos los bloques tengan tamaño 2. En ese caso los conteos podrían ser `{2, 2, 2, ...}`. La llamada lleva el conteo local enviado (`sendcount`) y cada receptor describe los bloques entrantes con su array.
 
 ### Diagrama de `MPI_Allgatherv`
 
@@ -465,9 +449,53 @@ resultado[13] = temporal[7]; // 41, de P3
 
 Así queda `resultado = [10, 11, 0, 0, 0, 21, 0, 0, 30, 0, 0, 0, 40, 41]`. Los `recvcounts` deben concordar con los datos que los emisores envían a este proceso; si se quiere recibir solo algunos valores directamente, los emisores también deben configurar sus bloques de envío para mandar exactamente esos valores. El buffer temporal es útil cuando se reciben bloques completos y luego se eligen o recolocan elementos.
 
+### ¿Qué pasa si cambiamos `rdispls` de `{0, 4, 8, 12}` a `{0, 4, 2, 12}`?
+
+Supongamos cuatro orígenes, `recvcounts = {4, 4, 4, 4}` y un `recvbuf` de 16 enteros. Cada desplazamiento marca dónde empieza el bloque de 4 elementos del origen correspondiente. Con `{0, 4, 8, 12}`, los bloques quedan seguidos sin solaparse. Al cambiar el desplazamiento de P2 de `8` a `2`, su bloque ocupa las posiciones 2–5 y se solapa con P0 (posiciones 0–3) y P1 (4–7).
+
+```mermaid
+flowchart TB
+    subgraph correcto["rdispls = {0, 4, 8, 12} · bloques contiguos"]
+        direction LR
+        A["P0 · índices 0–3"]
+        B["P1 · índices 4–7"]
+        C["P2 · índices 8–11"]
+        D["P3 · índices 12–15"]
+        A --- B --- C --- D
+    end
+    subgraph solapado["rdispls = {0, 4, 2, 12} · P2 se solapa"]
+        direction LR
+        E["P0 · 0–3"]
+        F["P1 · 4–7"]
+        G["P2 · 2–5  ⚠️"]
+        H["P3 · 12–15"]
+        E --- F --- H
+        G -. "solapa en 2–3" .-> E
+        G -. "solapa en 4–5" .-> F
+    end
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#052e16,stroke-width:2px;
+    classDef overlap fill:#fee2e2,stroke:#dc2626,color:#450a0a,stroke-width:3px;
+    class A,B,C,D safe;
+    class E,F,H safe;
+    class G overlap;
+```
+
+Los bloques de recepción no deben solaparse: dos mensajes intentarían escribir en las mismas posiciones del buffer, lo que hace inválida la operación. Los `rdispls` pueden dejar huecos (por ejemplo, volver a usar `{0, 4, 8, 12}` en un buffer mayor), pero cada región ocupada debe ser distinta. Si se busca elegir valores individuales o ponerlos en posiciones no contiguas, recíbelos primero en un buffer temporal y cópialos después, como en el ejemplo anterior.
+
 ### Diferencia rápida
 
 | Operación | ¿Cuántos envía cada proceso a cada destino? | ¿Cómo se eligen los bloques? |
 |---|---|---|
 | `MPI_Alltoall` | El mismo número fijo. | Bloques iguales, colocados contiguamente por rango. |
 | `MPI_Alltoallv` | Puede variar según destino y origen. | Arrays `sendcounts`, `sdispls`, `recvcounts` y `rdispls`. |
+
+# Conceptos que únicamente entrarán en evaluación teórica
+
+Puede salir en traza. La recepción puede ser bloqueante.
+## MPI_Ssend
+Envío síncrono, el envío finaliza cuando empieza la recepción. 
+El envío finaliza cuando el receptor COMIENZA a recibir, no cuando lo recibe todo.
+
+# MPI_Bsend
+Envío basado en buffer, acaba independientemente del receptor cuando la información está en el buffer.
+Los problemas los podemos tener en el buffer.

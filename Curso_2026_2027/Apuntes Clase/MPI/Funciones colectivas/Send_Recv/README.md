@@ -16,6 +16,10 @@ Cada ejemplo es un programa independiente: toda la implementación está dentro 
 | MPI_Reduce_scatter | [08_Reduce_scatter.md](08_Reduce_scatter.md) | [08_Reduce_scatter.c](08_Reduce_scatter.c) |
 | MPI_Barrier | [09_Barrier.md](09_Barrier.md) | [09_Barrier.c](09_Barrier.c) |
 | MPI_Scan | [10_Scan.md](10_Scan.md) | [10_Scan.c](10_Scan.c) |
+| MPI_Allgather | [11_Allgather.md](11_Allgather.md) | [11_Allgather.c](11_Allgather.c) |
+| MPI_Allgatherv | [12_Allgatherv.md](12_Allgatherv.md) | [12_Allgatherv.c](12_Allgatherv.c) |
+| MPI_Alltoall | [13_Alltoall.md](13_Alltoall.md) | [13_Alltoall.c](13_Alltoall.c) |
+| MPI_Alltoallv | [14_Alltoallv.md](14_Alltoallv.md) | [14_Alltoallv.c](14_Alltoallv.c) |
 
 ## Cómo estudiar cada ejemplo
 
@@ -25,7 +29,7 @@ Cada ejemplo es un programa independiente: toda la implementación está dentro 
 
 ## Alcance de los programas
 
-Los diez programas requieren exactamente cuatro procesos, trabajan con MPI_INT y usan P0 como raíz o coordinador cuando hace falta. Las reducciones usan suma. Son ejemplos concretos de la funcionalidad, con tamaños fijos: no reproducen toda la API MPI ni sus algoritmos internos. En Reduce_scatter cada proceso recibe un entero.
+Los catorce programas requieren exactamente cuatro procesos y trabajan con MPI_INT. Usan P0 como raíz o coordinador cuando hace falta; Alltoall y Alltoallv usan intercambios por parejas. Las reducciones usan suma. Son ejemplos concretos de la funcionalidad, con tamaños preparados: no reproducen toda la API MPI ni sus algoritmos internos. En Reduce_scatter cada proceso recibe un entero.
 
 Todos los procesos deben ejecutar el algoritmo correspondiente. Las etiquetas de estos ejemplos deben reservarse para sus mensajes y no mezclarse con tráfico ajeno en el mismo comunicador. Las fases de recogida y reparto usan etiquetas diferentes. El orden evita ciclos de espera incluso si Send espera a su Recv.
 
@@ -42,4 +46,4 @@ Cada página contiene el comando para su programa. El orden de las líneas impre
 
 ## Validación
 
-Los diez programas pasan la comprobación de sintaxis C99. Sus bloques punto a punto también superan una simulación local con cuatro procesos y mensajes síncronos: se verifican resultados, etiquetas, cantidades y que la barrera espere todas las llegadas. La ejecución con MPI real queda pendiente porque no está instalado en este entorno.
+Los diez programas originales pasan la comprobación de sintaxis C99. La comprobación de los cuatro programas añadidos queda pendiente; ejecutar los ejemplos requiere MPI instalado.
