@@ -913,3 +913,17 @@ Además, en `COMM2`, los rangos WORLD 0, 1 y 2 pasan a ser rangos 0, 1 y 2. En `
 Los grupos obtenidos o creados dinámicamente se liberan con `MPI_Group_free`; los comunicadores creados se liberan con `MPI_Comm_free`. No se liberan los comunicadores predefinidos como `MPI_COMM_WORLD` o `MPI_COMM_SELF`. Se libera por separado el grupo y el comunicador: son objetos diferentes.
 
 Referencia: [MPI Forum — grupos](https://www.mpi-forum.org/docs/mpi-5.0/mpi50-report/node180.htm) y [creación de comunicadores](https://www.mpi-forum.org/docs/mpi-5.0/mpi50-report/node190.htm).
+
+
+# Mediciones de tiempo
+
+## MPI_Wtime();
+Es un cronometro que devuelve un double. Llamamos a Wtime.
+
+Fin - Inicio = El tiempo en segundos.
+
+Si hacemos nuestras trazas por proceso...
+
+Entonces el que llama es el root.
+
+## MPI_Wtick();
