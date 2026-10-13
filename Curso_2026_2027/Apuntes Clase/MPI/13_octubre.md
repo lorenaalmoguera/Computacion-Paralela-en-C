@@ -927,3 +927,5 @@ Si hacemos nuestras trazas por proceso...
 Entonces el que llama es el root.
 
 ## MPI_Wtick();
+
+Temas de precision. Si estoy necesitando medir en ms y esas cosas entonces ya sería con MPI_Wtick.
