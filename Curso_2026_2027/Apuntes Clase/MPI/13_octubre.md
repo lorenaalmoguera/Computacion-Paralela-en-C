@@ -649,18 +649,267 @@ Si se ceea un tipo derivado en la creación se asegura la contigüidad de los da
 
 # Comunicadores y grupos
 
-Los comunicadores se utilizan para la comunicación de mensaeje entre un grupo de procesos.
+Un **grupo** es una lista ordenada de procesos. Un **comunicador** combina un grupo con un contexto de comunicación: define quién puede hablar con quién, sus rangos dentro de ese universo y qué mensajes pertenecen a esa comunicación. El grupo aporta miembros y orden; el comunicador permite realizar las llamadas MPI. Por eso, para enviar un mensaje no basta con un rango: el rango siempre se interpreta dentro del comunicador que se pasa a `MPI_Send` o `MPI_Recv`.
 
-Los grupos son inmutables: Se crean pero no se modifican.
+```mermaid
+flowchart LR
+    W["MPI_COMM_WORLD<br/>grupo ordenado: procesos del mundo<br/>contexto de comunicación W"] --> S["seleccionar procesos y crear contexto"]
+    S --> A["COMM_A<br/>grupo: procesos seleccionados<br/>rangos propios 0, 1, 2, ...<br/>contexto de comunicación A"]
+    S --> B["COMM_B<br/>otro grupo posible<br/>rangos y contexto propios"]
+```
 
-## Grupos por defecto
-* `MPI_COMM_WORLD`
-* `MPI_COMM_SELF`
-* `MPI_COMM_NULL`
+Dos comunicadores pueden incluir procesos coincidentes y aun así ser contextos separados. Un mensaje enviado en `COMM_A` no se recibe usando `COMM_B`, aunque coincidan el origen, el destino y la etiqueta.
 
-## Propiedades que se obtienen de un grupo
+## Comunicadores predefinidos
 
-* `MPI_Group_size`
-* `MPI_Group_rank`
+`MPI_COMM_WORLD` es el comunicador que incluye inicialmente a los procesos del trabajo MPI. `MPI_COMM_SELF` incluye solo al proceso que hace la llamada, con rango 0 dentro de ese comunicador. `MPI_COMM_NULL` **no es un comunicador utilizable**: indica que un proceso no pertenece al comunicador creado (o que no hay comunicador válido).
 
+No hay que confundir estos comunicadores con los grupos predefinidos: `MPI_GROUP_EMPTY` es un grupo vacío válido y `MPI_GROUP_NULL` es un identificador de grupo inválido. Un grupo vacío no es lo mismo que un identificador nulo.
 
+`MPI_COMM_WORLD` y `G_original` representan los mismos procesos en el mismo orden en este ejemplo: `G_original` se obtiene del grupo asociado a `MPI_COMM_WORLD`. Por eso, inicialmente, rango WORLD 0 identifica al mismo proceso que rango 0 de `G_original`, y así sucesivamente. **No son el mismo objeto**: `MPI_COMM_WORLD` es un comunicador con contexto de comunicación; `G_original` solo describe el conjunto ordenado de procesos. Los grupos nuevos tampoco crean procesos: seleccionan y ordenan procesos MPI que ya existen.
+
+El grupo por sí mismo no es el canal para intercambiar mensajes. Se usa para crear un comunicador nuevo, por ejemplo `COMM2`. Ese comunicador permite que el subconjunto realice comunicaciones colectivas o punto a punto entre sus miembros sin incluir a los demás procesos de `MPI_COMM_WORLD`.
+
+```mermaid
+flowchart LR
+    W["MPI_COMM_WORLD<br/>procesos existentes P0, P1, P2, P3, ..."] --> G["G_original<br/>misma lista ordenada de miembros"]
+    G --> S["seleccionar un subconjunto<br/>MPI_Group_incl"]
+    S --> NG["G2<br/>solo selecciona y ordena miembros"]
+    NG --> NC["MPI_Comm_create"]
+    NC --> C["COMM2<br/>contexto para comunicar<br/>solo entre los miembros de G2"]
+```
+
+## Rangos: siempre relativos al grupo o comunicador
+
+Los rangos empiezan en 0 y siguen el orden de miembros del grupo. No son identificadores globales permanentes del proceso. Por ejemplo, el proceso de rango 7 en `MPI_COMM_WORLD` puede ser rango 0 en un nuevo grupo creado con la lista `{7,5}`.
+
+```mermaid
+flowchart TB
+    subgraph mundo["MPI_COMM_WORLD: rango → proceso"]
+        direction LR
+        W0["0 → proceso A"] --- W1["1 → proceso B"] --- W2["2 → proceso C"] --- W3["3 → proceso D"]
+        W4["4 → proceso E"] --- W5["5 → proceso F"] --- W6["6 → proceso G"] --- W7["7 → proceso H"]
+    end
+    subgraph nuevo["Grupo nuevo creado con rangos {7,5}"]
+        direction LR
+        N0["rango nuevo 0 → proceso H"] --- N1["rango nuevo 1 → proceso F"]
+    end
+```
+
+`MPI_Group_size(group, &n)` obtiene el número de procesos del grupo. `MPI_Group_rank(group, &rank)` obtiene el rango del proceso que realiza la llamada dentro de ese grupo; si no pertenece, devuelve `MPI_UNDEFINED`. Para consultar el rango de un comunicador se usa `MPI_Comm_rank(comm, &rank)`. Hay equivalentes para consultar su tamaño, como `MPI_Comm_size`.
+
+En un ejercicio, «¿cuántos procesos hay en el grupo?» se contesta con `MPI_Group_size`. «¿Cuál es el identificador/rango de este proceso en el grupo?» se contesta con `MPI_Group_rank`. Si piden los rangos de los **miembros** comparados con otro grupo, se usa `MPI_Group_translate_ranks`. Los rangos son nombres relativos, no PID del sistema operativo.
+
+```mermaid
+flowchart LR
+    A["MPI_Group_size(G3)"] --> B["2 procesos"]
+    C["MPI_Group_rank(G3)"] --> D["rango local de quien consulta<br/>o MPI_UNDEFINED si no pertenece"]
+    E["MPI_Group_translate_ranks"] --> F["mapea los rangos del grupo<br/>a rangos de otro grupo"]
+```
+
+## Obtener y seleccionar grupos
+
+`MPI_Comm_group(comm, &group)` obtiene el grupo asociado a un comunicador. No crea un comunicador nuevo: solo proporciona un objeto grupo que se puede usar para construir subconjuntos. Los grupos son inmutables; para seleccionar o combinar miembros se crea otro grupo.
+
+`MPI_Group_incl` toma una lista de rangos del grupo de entrada y construye el grupo indicado por esa lista. **El orden de la lista determina los nuevos rangos.** `MPI_Group_excl` crea el grupo con los rangos restantes, conservando el orden del grupo de entrada. Las variantes `MPI_Group_range_incl` y `MPI_Group_range_excl` expresan selecciones como intervalos con paso.
+
+```mermaid
+flowchart LR
+    G["Grupo original<br/>rangos 0 1 2 3 4 5 6 7"] --> I["MPI_Group_incl<br/>lista {7,5}"]
+    I --> H["Grupo nuevo<br/>rango 0: proceso que era 7<br/>rango 1: proceso que era 5"]
+    G --> E["MPI_Group_excl<br/>excluir {7,5}"]
+    E --> R["Grupo restante<br/>procesos que no eran 7 ni 5"]
+```
+
+Para construir operaciones de conjuntos, MPI ofrece `MPI_Group_union`, `MPI_Group_intersection` y `MPI_Group_difference`. Reciben dos grupos y producen otro grupo con la unión, intersección o diferencia de sus miembros. El orden de miembros importa porque determina los rangos; consulta siempre los rangos resultantes con `MPI_Group_rank` o imprimiendo el mapeo.
+
+## Crear un comunicador a partir de un grupo
+
+`MPI_Comm_create(parent, group, &newcomm)` crea un comunicador con los miembros de `group` y un contexto nuevo. `group` debe ser un subconjunto del grupo de `parent`. **Todos los procesos de `parent` deben llamar a `MPI_Comm_create` en el mismo orden**, incluso quienes no pertenezcan al grupo nuevo. Los incluidos reciben un comunicador válido; los excluidos reciben `MPI_COMM_NULL`.
+
+```mermaid
+flowchart TB
+    A["Todos los procesos de MPI_COMM_WORLD"] --> B["Todos llaman MPI_Comm_create<br/>con el mismo grupo G2"]
+    B --> C["Miembros de G2"]
+    B --> D["No miembros de G2"]
+    C --> E["Obtienen COMM2 válido<br/>con rangos propios"]
+    D --> F["Obtienen MPI_COMM_NULL<br/>no deben usar COMM2"]
+```
+
+`MPI_Comm_group` solo extrae el grupo existente; `MPI_Group_incl` o `MPI_Group_excl` construye el subconjunto; `MPI_Comm_create` crea el comunicador que ya se puede usar para enviar mensajes o llamar colectivas.
+
+## Pregunta típica: ¿pueden hacer una colectiva solo los rangos WORLD 2 y 5?
+
+**No usando `MPI_COMM_WORLD` y haciendo que solo ellos llamen.** Una colectiva es colectiva respecto al comunicador que se pasa: todos los procesos que pertenecen a ese comunicador deben participar en el orden compatible. Por eso, si se llama `MPI_Bcast(..., MPI_COMM_WORLD)` o `MPI_Reduce(..., MPI_COMM_WORLD)`, participan todos los procesos de WORLD, no solo los rangos 2 y 5. Que los otros procesos salten la llamada con un `if (rank == 2 || rank == 5)` no crea un subgrupo: puede dejar la operación bloqueada y el programa es incorrecto.
+
+Para que solo participen 2 y 5, se crea un grupo con esos rangos, y a partir de él un comunicador. Todos los procesos de `MPI_COMM_WORLD` llaman a `MPI_Comm_create`; luego, solo los dos miembros llaman a las colectivas sobre `COMM25`.
+
+```mermaid
+flowchart TB
+    W["MPI_COMM_WORLD<br/>P0 P1 P2 P3 P4 P5 P6 P7"] --> C["MPI_Comm_create con grupo {2,5}<br/>lo llaman todos los procesos WORLD"]
+    C --> M["COMM25<br/>rango 0 = WORLD 2<br/>rango 1 = WORLD 5"]
+    M --> B["MPI_Bcast(..., root=0, COMM25)<br/>solo participan WORLD 2 y 5"]
+    M --> R["MPI_Reduce(..., root=0, COMM25)<br/>WORLD 2 y 5 contribuyen;<br/>WORLD 2 recibe el resultado"]
+```
+
+En `MPI_Bcast`, `root` es el rango **dentro de `COMM25`**, no el rango de WORLD. Como el grupo se crea con `{2,5}`, el root 0 es WORLD 2. En `MPI_Reduce`, todos los miembros de `COMM25` aportan; el root local 0 (WORLD 2) recibe la reducción.
+
+```c
+// Dentro del programa, después de MPI_Comm_group(MPI_COMM_WORLD, &G_original).
+int rangos25[2] = {2, 5};
+MPI_Group G25;
+MPI_Comm COMM25;
+MPI_Group_incl(G_original, 2, rangos25, &G25);
+
+// La llamada la hacen TODOS los procesos de MPI_COMM_WORLD.
+MPI_Comm_create(MPI_COMM_WORLD, G25, &COMM25);
+
+// Solo los rangos WORLD 2 y 5 pertenecen a COMM25.
+if (COMM25 != MPI_COMM_NULL) {
+    int rank25, dato, local, suma;
+    MPI_Comm_rank(COMM25, &rank25);
+
+    dato = (rank25 == 0) ? 123 : 0;
+    MPI_Bcast(&dato, 1, MPI_INT, 0, COMM25);
+    // COMM25 rank 0 (WORLD 2) difunde 123 a COMM25 rank 1 (WORLD 5).
+
+    local = (rank25 == 0) ? 2 : 5;
+    MPI_Reduce(&local, &suma, 1, MPI_INT, MPI_SUM, 0, COMM25);
+    if (rank25 == 0)
+        printf("Suma de WORLD 2 y 5 = %d\n", suma); // imprime 7
+}
+
+MPI_Group_free(&G25);
+if (COMM25 != MPI_COMM_NULL) MPI_Comm_free(&COMM25);
+```
+
+### ¿Y qué pasa con los rangos WORLD 7 y 5 de `COMM3`?
+
+En el ejemplo anterior, `G3` se crea con la lista `{7,5}` y `COMM3` se asocia precisamente a esos dos procesos. Dentro de `COMM3` están solos: su grupo tiene tamaño 2, con rango COMM3 0 = WORLD 7 y rango COMM3 1 = WORLD 5. Por tanto, **sí pueden hacer `MPI_Bcast` o `MPI_Reduce` entre ellos usando `COMM3`**. No hace falta que participen los otros procesos de WORLD en esas colectivas (aunque todos sí participaron antes en la creación de `COMM3`).
+
+```mermaid
+flowchart LR
+    A["WORLD 7<br/>COMM3 rank 0"] <-->|"colectivas sobre COMM3<br/>Bcast: root 0 · Reduce: root 0"| B["WORLD 5<br/>COMM3 rank 1"]
+    X["WORLD 0,1,2,3,4,6<br/>recibieron MPI_COMM_NULL"] -. "no llaman las colectivas de COMM3" .-> A
+```
+
+En este `COMM3`, el root local 0 es WORLD 7 porque la lista `{7,5}` puso primero ese rango. Para que WORLD 5 fuese el root, se podría usar root local 1. La regla no cambia entre `MPI_Bcast` y `MPI_Reduce`: todos los miembros de `COMM3` participan; en `MPI_Reduce`, el resultado se entrega solo al root escogido.
+
+## Ejemplo corregido
+
+Este ejemplo supone al menos ocho procesos en `MPI_COMM_WORLD`. Todos extraen el grupo original y construyen los mismos grupos. `G2` contiene los procesos de rangos mundiales 0, 1 y 2. `G3` contiene primero el proceso 7 y después el 5; por eso sus rangos nuevos siguen ese orden.
+
+### ¿Qué cambia con `{2, 1, 0}` en vez de `{0, 1, 2}`?
+
+`MPI_Group_incl` conserva el orden de la lista `rangos1`. Con `{0,1,2}`, el rango 0 de `G2` corresponde al rango 0 de WORLD, el rango 1 al 1, y el rango 2 al 2. Si se usa `{2,1,0}`, **siguen siendo los mismos tres procesos**, pero se invierte su orden dentro del grupo. Al crear `COMM2`, sus rangos quedan así:
+
+| Rango en `G2` / `COMM2` | Proceso identificado por su rango en `MPI_COMM_WORLD` |
+|---:|---:|
+| 0 | 2 |
+| 1 | 1 |
+| 2 | 0 |
+
+```mermaid
+flowchart LR
+    subgraph listaA["rangos1 = {0, 1, 2}"]
+        A0["rango nuevo 0 ← WORLD 0"] --- A1["rango nuevo 1 ← WORLD 1"] --- A2["rango nuevo 2 ← WORLD 2"]
+    end
+    subgraph listaB["rangos1 = {2, 1, 0}"]
+        B0["rango nuevo 0 ← WORLD 2"] --- B1["rango nuevo 1 ← WORLD 1"] --- B2["rango nuevo 2 ← WORLD 0"]
+    end
+```
+
+Esto puede cambiar el resultado del programa si el código interpreta `rank == 0` como un rol especial: con `{2,1,0}`, ese rango nuevo lo ocupa el proceso que era WORLD 2. Para encontrar el proceso correspondiente, se puede usar `MPI_Group_translate_ranks`, como en el ejemplo de abajo. La lista solo cambia miembros/orden del grupo; `MPI_Comm_create` establece el comunicador por el que ese subconjunto puede comunicarse.
+
+```c
+#include <mpi.h>
+#include <stdio.h>
+
+int main(int argc, char **argv) {
+    MPI_Init(&argc, &argv);
+
+    int rank_world, size_world;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_world);
+    MPI_Comm_size(MPI_COMM_WORLD, &size_world);
+    if (size_world < 8) {
+        if (rank_world == 0)
+            fprintf(stderr, "Ejecuta con al menos 8 procesos.\n");
+        MPI_Finalize();
+        return 1;
+    }
+
+    MPI_Group G_original, G2, G3;
+    MPI_Comm COMM2, COMM3;
+    // Prueba también {2, 1, 0}: mismos miembros, distinto orden/rangos.
+    int rangos1[3] = {0, 1, 2};
+    int rangos2[2] = {7, 5};
+
+    MPI_Comm_group(MPI_COMM_WORLD, &G_original);
+    MPI_Group_incl(G_original, 3, rangos1, &G2);
+    MPI_Group_incl(G_original, 2, rangos2, &G3);
+
+    // Pregunta típica: ¿cuántos procesos tiene cada grupo?
+    int tam_G2, tam_G3;
+    MPI_Group_size(G2, &tam_G2); // 3
+    MPI_Group_size(G3, &tam_G3); // 2
+
+    // ¿Qué rangos de MPI_COMM_WORLD identifican a sus miembros?
+    // Traducimos los rangos locales de cada grupo al grupo original.
+    if (rank_world == 0) {
+        int indices_G2[3] = {0, 1, 2}, ids_world_G2[3];
+        int indices_G3[2] = {0, 1}, ids_world_G3[2];
+        MPI_Group_translate_ranks(G2, tam_G2, indices_G2,
+                                  G_original, ids_world_G2);
+        MPI_Group_translate_ranks(G3, tam_G3, indices_G3,
+                                  G_original, ids_world_G3);
+
+        printf("G2: tamaño %d; rangos WORLD:", tam_G2);
+        for (int i = 0; i < tam_G2; ++i) printf(" %d", ids_world_G2[i]);
+        printf("\nG3: tamaño %d; rangos WORLD:", tam_G3);
+        for (int i = 0; i < tam_G3; ++i) printf(" %d", ids_world_G3[i]);
+        printf("\n");
+    }
+
+    // Estas dos llamadas las ejecutan todos los procesos de WORLD,
+    // en el mismo orden, también los que quedarán fuera del grupo.
+    MPI_Comm_create(MPI_COMM_WORLD, G2, &COMM2);
+    MPI_Comm_create(MPI_COMM_WORLD, G3, &COMM3);
+
+    if (COMM2 != MPI_COMM_NULL) {
+        int rank2, size2;
+        MPI_Comm_rank(COMM2, &rank2);
+        MPI_Comm_size(COMM2, &size2);
+        printf("rango WORLD %d -> rango COMM2 %d de %d\n",
+               rank_world, rank2, size2);
+    }
+    if (COMM3 != MPI_COMM_NULL) {
+        int rank3;
+        MPI_Comm_rank(COMM3, &rank3);
+        printf("rango WORLD %d -> rango COMM3 %d\n",
+               rank_world, rank3);
+    }
+
+    if (COMM2 != MPI_COMM_NULL) MPI_Comm_free(&COMM2);
+    if (COMM3 != MPI_COMM_NULL) MPI_Comm_free(&COMM3);
+    MPI_Group_free(&G2);
+    MPI_Group_free(&G3);
+    MPI_Group_free(&G_original);
+    MPI_Finalize();
+    return 0;
+}
+```
+
+Salida esperada del recuento y la traducción:
+
+```text
+G2: tamaño 3; rangos WORLD: 0 1 2
+G3: tamaño 2; rangos WORLD: 7 5
+```
+
+Además, en `COMM2`, los rangos WORLD 0, 1 y 2 pasan a ser rangos 0, 1 y 2. En `COMM3`, el rango WORLD 7 pasa a rango 0 y el rango WORLD 5 a rango 1. Los demás procesos reciben `MPI_COMM_NULL` para esos comunicadores. En la ejecución, las líneas impresas por procesos distintos pueden aparecer en cualquier orden.
+
+## Liberar recursos
+
+Los grupos obtenidos o creados dinámicamente se liberan con `MPI_Group_free`; los comunicadores creados se liberan con `MPI_Comm_free`. No se liberan los comunicadores predefinidos como `MPI_COMM_WORLD` o `MPI_COMM_SELF`. Se libera por separado el grupo y el comunicador: son objetos diferentes.
+
+Referencia: [MPI Forum — grupos](https://www.mpi-forum.org/docs/mpi-5.0/mpi50-report/node180.htm) y [creación de comunicadores](https://www.mpi-forum.org/docs/mpi-5.0/mpi50-report/node190.htm).
