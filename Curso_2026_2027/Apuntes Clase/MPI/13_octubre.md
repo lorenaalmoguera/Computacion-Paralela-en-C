@@ -492,22 +492,150 @@ Los bloques de recepción no deben solaparse: dos mensajes intentarían escribir
 # Conceptos teóricos
 
 Puede salir en traza. La recepción puede ser bloqueante.
+
+## MPI_Send
+
+Envío estándar bloqueante: el proceso puede continuar cuando MPI ya permite reutilizar el buffer de envío. Esto **no garantiza** que el receptor ya haya terminado su `MPI_Recv`; MPI puede copiar el mensaje a un buffer interno o esperar a que el receptor lo publique.
+
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant M as MPI / red
+    participant B as Receptor
+    A->>M: MPI_Send(buffer)
+    Note over A: La llamada puede esperar según el protocolo
+    M-->>A: Send retorna y el buffer se puede reutilizar
+    M->>B: El mensaje queda disponible
+    B->>M: MPI_Recv(buffer)
+    M-->>B: Recv retorna con los datos
+```
+
 ## MPI_Ssend
 Envío síncrono, el envío finaliza cuando empieza la recepción. 
 El envío finaliza cuando el receptor COMIENZA a recibir, no cuando lo recibe todo.
+
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant B as Receptor
+    A->>B: MPI_Ssend inicia el envío
+    Note over A: Ssend queda bloqueado
+    B->>A: MPI_Recv correspondiente comienza
+    B-->>A: Se confirma el inicio de la recepción
+    A-->>A: MPI_Ssend puede retornar
+    B-->>B: MPI_Recv termina al recibir el mensaje
+```
 
 ## MPI_Bsend
 Envío basado en buffer, acaba independientemente del receptor cuando la información está en el buffer.
 Los problemas los podemos tener en el buffer.
 
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant M as Buffer adjunto a MPI
+    participant B as Receptor
+    A->>M: MPI_Bsend copia el mensaje al buffer
+    M-->>A: Bsend retorna; ya se puede reutilizar el buffer original
+    Note over M: Hace falta espacio adjunto suficiente
+    M->>B: MPI puede entregar el mensaje
+    B->>M: MPI_Recv correspondiente
+```
+
+Antes de usar `MPI_Bsend`, el programa debe adjuntar memoria con `MPI_Buffer_attach`; debe liberarla después de que las operaciones hayan terminado y separar el buffer con `MPI_Buffer_detach`.
+
 ## MPI_Rsend
 Acaba independiente de lo que pasa en recepción, es la función que más errores puede provocar y por tanto optimizar. Tenemos que estar seguros de que el receptor está preparado para recibir.
 
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant B as Receptor
+    B->>B: Publica antes el MPI_Recv que empareja el mensaje
+    A->>B: MPI_Rsend (solo válido con la recepción ya publicada)
+    B-->>A: El envío puede completar
+    B-->>B: MPI_Recv obtiene el mensaje
+```
+
+La recepción correspondiente debe estar ya publicada cuando se inicia `MPI_Rsend`; incumplir esa condición hace que el programa sea incorrecto.
+
 ## MPI_Recv
 Cuando se llama a esta función no se retorna hasta que se ha recibido el mensaje (si no llega nunca no retorna nunca)
+
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant B as Receptor
+    B->>B: MPI_Recv (espera bloqueado)
+    A->>B: MPI_Send del origen y etiqueta esperados
+    B-->>B: Los datos se copian al buffer
+    B-->>A: MPI_Recv retorna con el mensaje completo
+```
+
+La llamada selecciona el mensaje usando comunicador, origen (o `MPI_ANY_SOURCE`), etiqueta (o `MPI_ANY_TAG`) y tipo/capacidad compatibles. Si nunca llega un mensaje que coincida, la recepción puede esperar indefinidamente.
 
 ## MPI_Isend
 
 Una opción para intentar simultanear cómputo y comunicaciones son las funciones asíncronas (se intenta evitar que los procesos estén ociosos mientras se espera un proceso de envío o de recepción)
 
+```mermaid
+sequenceDiagram
+    participant A as Proceso emisor
+    participant M as MPI
+    A->>M: MPI_Isend(buffer, &request)
+    M-->>A: Retorna enseguida con una petición
+    A->>A: Puede calcular usando otras variables
+    A->>M: MPI_Wait(&request)
+    M-->>A: Envío completado; ya puede reutilizar buffer
+```
+
+`MPI_Isend` no permite modificar ni reutilizar el buffer de envío hasta completar la petición con `MPI_Wait`, `MPI_Test` u otra finalización válida.
+
 ## MPI_Irecv
+
+```mermaid
+sequenceDiagram
+    participant A as Emisor
+    participant B as Proceso receptor
+    B->>B: MPI_Irecv(buffer, &request)
+    B-->>B: Retorna enseguida; la recepción queda publicada
+    B->>B: Puede hacer trabajo independiente
+    A->>B: El mensaje llega y se copia en buffer
+    B->>B: MPI_Wait(&request) confirma la finalización
+    Note over B: Ahora puede leer o reutilizar buffer
+```
+
+Hasta completar la petición, el programa no debe leer ni modificar la zona del buffer reservada para esa recepción.
+
+## MPI_Wait
+
+`MPI_Wait` bloquea hasta que la operación no bloqueante asociada a la petición se completa. Después, el buffer puede reutilizarse según fuera de envío o recepción. 
+
+```c
+MPI_Wait(
+    MPI_Request *request,
+    MPI_Status *status
+)
+```
+
+Nos devuelve el status para saber que es lo que ha pasado.
+
+```mermaid
+flowchart LR
+    A["MPI_Isend / MPI_Irecv<br/>devuelve request"] --> B["Trabajo independiente"]
+    B --> C["MPI_Wait(&request)<br/>espera si aún falta"]
+    C --> D["Operación completa<br/>buffer seguro de reutilizar"]
+```
+
+## MPI_Test
+
+`MPI_Test` consulta una petición sin esperar: devuelve en `flag` si la operación ya se completó. Si `flag` es falso, se puede seguir trabajando y volver a consultar; si es verdadero, la operación terminó y se puede usar el buffer.
+
+```mermaid
+flowchart TD
+    A["MPI_Isend / MPI_Irecv<br/>request pendiente"] --> B["MPI_Test(&request, &flag)"]
+    B --> C{"¿flag es verdadero?"}
+    C -->|"No"| D["Seguir con trabajo independiente"]
+    D --> B
+    C -->|"Sí"| E["Operación completada<br/>usar o reutilizar el buffer"]
+```
