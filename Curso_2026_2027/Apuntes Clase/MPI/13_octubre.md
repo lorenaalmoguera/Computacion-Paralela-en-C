@@ -424,6 +424,47 @@ flowchart LR
 
 Los números sobre las flechas son las cantidades enviadas. La flecha P0→P2 y P2→P1 lleva cero elementos, así que no se dibuja. Cada receptor guarda los bloques entrantes en orden de rango de origen, en las posiciones indicadas por sus `rdispls`. El número de elementos de cada mensaje debe concordar entre el `sendcounts` del emisor y el `recvcounts` del receptor.
 
+### Inciso: ¿cómo cambiar la posición de los ceros en `recvbuf`?
+
+`MPI_Alltoallv` permite decidir **dónde empieza cada bloque recibido** mediante `rdispls`. Si el bloque completo cabe en una zona continua, se puede colocar directamente en la posición deseada. Pero la función no reordena los elementos dentro de un bloque ni deja huecos entre sus elementos: el bloque de cada origen se copia de forma contigua.
+
+Por ejemplo, supongamos que el proceso recibe dos valores de cada uno de los cuatro orígenes:
+
+```text
+P0 aporta [10, 11]   P1 aporta [20, 21]
+P2 aporta [30, 31]   P3 aporta [40, 41]
+```
+
+Queremos construir este buffer:
+
+```text
+[10, 11, 0, 0, 0, 21, 0, 0, 30, 0, 0, 0, 40, 41]
+```
+
+De P1 queremos conservar solo `21`, y de P2 solo `30`. Como cada bloque recibido tiene dos valores contiguos, primero recibimos los cuatro bloques juntos en un buffer temporal (usando desplazamientos `0, 2, 4, 6`) y después copiamos los valores a las posiciones elegidas. Inicializamos el destino a cero para que las posiciones sin copiar sigan siendo cero:
+
+```c
+int recvcounts[4] = {2, 2, 2, 2};
+int rdispls[4]    = {0, 2, 4, 6};
+int temporal[8];
+int resultado[14] = {0};
+
+MPI_Alltoallv(sendbuf, sendcounts, sdispls, MPI_INT,
+              temporal, recvcounts, rdispls, MPI_INT,
+              MPI_COMM_WORLD);
+
+// temporal está ordenado por origen:
+// [10, 11 | 20, 21 | 30, 31 | 40, 41]
+resultado[0]  = temporal[0]; // 10, de P0
+resultado[1]  = temporal[1]; // 11, de P0
+resultado[5]  = temporal[3]; // 21, segundo valor de P1
+resultado[8]  = temporal[4]; // 30, primer valor de P2
+resultado[12] = temporal[6]; // 40, de P3
+resultado[13] = temporal[7]; // 41, de P3
+```
+
+Así queda `resultado = [10, 11, 0, 0, 0, 21, 0, 0, 30, 0, 0, 0, 40, 41]`. Los `recvcounts` deben concordar con los datos que los emisores envían a este proceso; si se quiere recibir solo algunos valores directamente, los emisores también deben configurar sus bloques de envío para mandar exactamente esos valores. El buffer temporal es útil cuando se reciben bloques completos y luego se eligen o recolocan elementos.
+
 ### Diferencia rápida
 
 | Operación | ¿Cuántos envía cada proceso a cada destino? | ¿Cómo se eligen los bloques? |
