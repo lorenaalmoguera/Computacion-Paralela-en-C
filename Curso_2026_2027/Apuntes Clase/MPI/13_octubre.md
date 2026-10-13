@@ -639,3 +639,28 @@ flowchart TD
     D --> B
     C -->|"Sí"| E["Operación completada<br/>usar o reutilizar el buffer"]
 ```
+
+Cuando necesitamos enviar tipos de datos complejos podemos optar por dos opciones
+
+1. Crear un tipo de datos derivado
+2. empaquetar los datos
+
+Si se ceea un tipo derivado en la creación se asegura la contigüidad de los datos en memoria.
+
+# Comunicadores y grupos
+
+Los comunicadores se utilizan para la comunicación de mensaeje entre un grupo de procesos.
+
+Los grupos son inmutables: Se crean pero no se modifican.
+
+## Grupos por defecto
+* `MPI_COMM_WORLD`
+* `MPI_COMM_SELF`
+* `MPI_COMM_NULL`
+
+## Propiedades que se obtienen de un grupo
+
+* `MPI_Group_size`
+* `MPI_Group_rank`
+
+
