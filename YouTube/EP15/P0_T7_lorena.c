@@ -93,6 +93,7 @@ int main(int argc, char *argv[]){
         for(int i = 0 ; i < filas ; i++){
             free(submatrices[s][i]);
         }
+        free(submatrices[s]);
     }
 
     free(submatrices);
