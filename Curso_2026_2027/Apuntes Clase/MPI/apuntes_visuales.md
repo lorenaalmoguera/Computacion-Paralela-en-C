@@ -1,6 +1,11 @@
-# Funciones colectivas
+> **Prácticas de la asignatura:** únicamente se utilizarán las funciones de MPI-1 vistas en clase. Todo lo que aparezca desde la sección «MPI-2 y posteriores» es únicamente informativo.
 
-## MPI_Bcast
+<!-- Clasificación por versión del estándar MPI, no por tema de la asignatura. Todas las funciones representadas actualmente pertenecen a MPI-1, incluidas las comunicaciones no bloqueantes. Referencia: https://www.mpi-forum.org/docs/mpi-1.1/mpi-11-html/node182.html -->
+
+# MPI-1
+## Funciones colectivas
+
+### MPI_Bcast
 
 ```mermaid
 flowchart LR
@@ -9,7 +14,7 @@ flowchart LR
  B --> D["P1 · recibe 512<br/>dimensión = 512"]
  B --> E["P2 · recibe 512<br/>dimensión = 512"]
 ```
-## MPI_Reduce
+### MPI_Reduce
 
 ```mermaid
 flowchart LR
@@ -18,7 +23,7 @@ flowchart LR
  R --> C["P0 · resultado<br/>[1+15,23+7,2+8]<br/>[16,30,10]"]
 ```
 
-## MPI_Allreduce
+### MPI_Allreduce
 
 ```mermaid
 flowchart LR
@@ -28,7 +33,7 @@ flowchart LR
  R --> D["P1 · [16,30,10]"]
 ```
 
-## MPI_Gather
+### MPI_Gather
 
 ```mermaid
 flowchart LR
@@ -37,7 +42,7 @@ flowchart LR
  G --> C["P0 · V[1,23,2,15,7,8]"]
 ```
 
-## MPI_Gatherv
+### MPI_Gatherv
 
 ```mermaid
 flowchart LR
@@ -47,7 +52,7 @@ flowchart LR
  G --> D["P0 · V[1,23,2,15,7,8]"]
 ```
 
-## MPI_Scatter
+### MPI_Scatter
 
 ```mermaid
 flowchart LR
@@ -56,7 +61,7 @@ flowchart LR
  S --> C["P1 · V2[15,7,8]"]
 ```
 
-## MPI_Scatterv
+### MPI_Scatterv
 
 ```mermaid
 flowchart LR
@@ -66,7 +71,7 @@ flowchart LR
  S --> D["P2 · [15,7,8]"]
 ```
 
-## MPI_Reduce_scatter
+### MPI_Reduce_scatter
 
 ```mermaid
 flowchart LR
@@ -77,7 +82,7 @@ flowchart LR
  T --> D["P1 · [30,14,16]"]
 ```
 
-## MPI_Barrier
+### MPI_Barrier
 
 ```mermaid
 sequenceDiagram
@@ -93,7 +98,7 @@ sequenceDiagram
  Note over A,C: V sin cambios · sin transferencia de datos
 ```
 
-## MPI_Scan
+### MPI_Scan
 
 ```mermaid
 flowchart LR
@@ -103,7 +108,7 @@ flowchart LR
  S --> D["P1 · prefijo 0..1<br/>[16,30,10]"]
 ```
 
-## MPI_Allgather
+### MPI_Allgather
 
 ```mermaid
 flowchart LR
@@ -113,7 +118,7 @@ flowchart LR
  G --> D["P1 · V[1,23,2,15,7,8]"]
 ```
 
-## MPI_Allgatherv
+### MPI_Allgatherv
 
 ```mermaid
 flowchart LR
@@ -125,7 +130,7 @@ flowchart LR
  G --> F["P2 · V[1,23,2,15,7,8]"]
 ```
 
-## MPI_Alltoall
+### MPI_Alltoall
 
 ```mermaid
 flowchart LR
@@ -136,7 +141,7 @@ flowchart LR
  B -->|"V1[1,23,2] → P0"| C
  B -->|"V2[15,7,8] → P1"| D
 ```
-## MPI_Alltoallv
+### MPI_Alltoallv
 
 ```mermaid
 flowchart LR
@@ -148,9 +153,9 @@ flowchart LR
  B -->|"[8]"| D
 ```
 
-# Comunicación punto a punto
+## Comunicación punto a punto
 
-## MPI_Send
+### MPI_Send
 
 ```mermaid
 flowchart TD
@@ -164,7 +169,7 @@ flowchart TD
  E --> G
 ```
 
-## MPI_Recv
+### MPI_Recv
 
 ```mermaid
 sequenceDiagram
@@ -176,7 +181,7 @@ sequenceDiagram
  B->>B: Retorno · V[1,23,2,15,7,8] disponible
 ```
 
-## MPI_Ssend
+### MPI_Ssend
 
 ```mermaid
 sequenceDiagram
@@ -191,7 +196,7 @@ sequenceDiagram
  B->>B: Recv retorna con V completo
 ```
 
-## MPI_Bsend · MPI_Buffer_attach · MPI_Buffer_detach
+### MPI_Bsend · MPI_Buffer_attach · MPI_Buffer_detach
 
 ```mermaid
 sequenceDiagram
@@ -208,7 +213,7 @@ sequenceDiagram
  M-->>A: Buffer devuelto cuando ya no está en uso
 ```
 
-## MPI_Rsend
+### MPI_Rsend
 
 ```mermaid
 sequenceDiagram
@@ -221,7 +226,7 @@ sequenceDiagram
  B->>B: MPI_Wait · V completo disponible
 ```
 
-## MPI_Isend
+### MPI_Isend
 
 ```mermaid
 sequenceDiagram
@@ -237,7 +242,7 @@ sequenceDiagram
  M-->>A: Envío completado · V reutilizable
 ```
 
-## MPI_Irecv
+### MPI_Irecv
 
 ```mermaid
 sequenceDiagram
@@ -251,7 +256,7 @@ sequenceDiagram
  Note over B: Recepción completa · V[1,23,2,15,7,8] disponible
 ```
 
-## MPI_Wait
+### MPI_Wait
 
 ```mermaid
 flowchart TD
@@ -262,7 +267,7 @@ flowchart TD
  C -->|Sí| E["Retorno<br/>V[1,23,2,15,7,8] disponible"]
 ```
 
-## MPI_Test
+### MPI_Test
 
 ```mermaid
 flowchart TD
@@ -273,4 +278,6 @@ flowchart TD
  C -->|1| E["Recepción completa<br/>V[1,23,2,15,7,8] disponible"]
 ```
 
+# MPI-2 y posteriores
 
+<!-- Sección únicamente informativa. Actualmente no hay diagramas de funciones introducidas en MPI-2 o posteriores en esta guía. -->
