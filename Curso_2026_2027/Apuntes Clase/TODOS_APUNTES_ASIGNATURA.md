@@ -28,6 +28,8 @@ Los capítulos siguen los temas de estudio; algunos conceptos se retoman en el r
 
 [Guía exclusivamente visual de funciones](MPI/apuntes_visuales.md).
 
+[Esquema de programación y depuración de la asignatura](ESQUEMA_PROGRAMACION_ASIGNATURA.md).
+
 
 <a id="fundamentos"></a>
 
@@ -4030,6 +4032,7 @@ Recursos oficiales: [MPI Forum](https://www.mpi-forum.org/), [OpenMP](https://ww
 | [20 de octubre](MPI/20_octubre.md) | MPI-IO, ventanas, RMA, sincronización, fork-join y procesos dinámicos. |
 | [Fundamentos](../Apuntes/01_fundamentos.md) y [C secuencial](../Apuntes/02_programacion_secuencial.md) | Amdahl, métricas y teoría de C desarrollada en prácticas. |
 | [Colectivas](MPI/Funciones%20colectivas/README.md) y [Send/Recv](MPI/Funciones%20colectivas/Send_Recv/README.md) | Operaciones, diagramas y algoritmos didácticos. |
+| [Esquema de programación](ESQUEMA_PROGRAMACION_ASIGNATURA.md) | Criterios de código, reparto del trabajo, memoria diferencial, comunicaciones, depuración y tags. |
 
 La [revisión conceptual](../Apuntes/Revision_conceptual_para_profesor.md) documenta las aclaraciones previas. `MPI_Sendrecv` y `MPI_Sendrecv_replace` no se desarrollan como funciones vistas en clase: no aparecen explicadas en los archivos de clase consultados.
 
