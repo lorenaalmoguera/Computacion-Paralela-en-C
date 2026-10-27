@@ -1,61 +1,137 @@
 # Arquitecturas de memoria compartida: OpenMP
 
-Arquitecturas multicore forman parte de las arquitecturas de memoria compartida.
+## 1. Arquitectura multicore y memoria compartida
+
+Una **arquitectura de memoria compartida** es un sistema en el que las unidades de ejecución comparten un espacio de memoria. Las arquitecturas multicore estudiadas en clase forman parte de este modelo.
 
 ![Arquitectura multicore](arquitectura_multicore.png)
 
-La herramienta software para explotar el paralelismo es OpenMP.
+**OpenMP** es una herramienta de programación que permite explotar el paralelismo en sistemas de memoria compartida mediante hilos de ejecución.
 
-## Cosas a recordar
+## 2. Comunicación y sincronización
 
-* cualquier desarrollo paralelo necesita **COMUNICACIONES y SINCRONIZACIONES**
-* En memoria compartida las comunicaciones **NO UTILIZAN NINGÚN `SISTEMA DE COMUNICACIÓN` ENTRE COMPUTADORES**
+Todo desarrollo paralelo necesita **comunicación y sincronización**, también cuando la memoria es compartida.
 
-La red de intercomunicación explícita que existía en MPI desaparece, pero esto no significa que las comunicaciones desaparezcan. Las comunicaciones en MPI se veían claramente porque estaban directamente relacionadas con las funciones de MPI. Yo hago las comunicaciones cuando explícitamente utilizo funciones de MPI. Teníamos el concepto de mensaje en estas comunicaciones en MPI, pero este en OpenMP ya no existe. A pesar de esto, seguirán existiendo las comunicaciones.
+### Comunicación
 
-Aquí tiene muchísimo mas peso la sincronización. Esto se ve en por ejemplo las reducciones. Esperamos a obtener todos los resultados para sincronizar. En MPI no se hacia de forma explícita, se hacia de forma implicita. En OpenMP será de forma explícita.
+La **comunicación** consiste en compartir información entre las unidades de ejecución.
 
-Las comunicaciones se hacen a través de la memoria. La comunicación es compartir en este caso información, y lo voy a hacer siempre a través de la **memoria principal**. Solo existe un único espacio de memoria. Solo hay un mapa de memoria. Esto ha cambiado. 
+- En **MPI**, los procesos tienen espacios de memoria separados y se comunican mediante mensajes, utilizando funciones explícitas de MPI.
+- En **OpenMP**, los hilos comparten el espacio de memoria del proceso y se comunican leyendo y escribiendo datos compartidos. No se utiliza el modelo de intercambio de mensajes entre procesos de MPI.
 
-Que la memoria sea compartida, es decir, única, y por lo tanto, hay un aspecto de MPI que vimos al principio que es cuando declarabamos una variable, cuantas variables de este tipo tengo?: Una por proceso, porque los procesos se estaban ejecutando cada uno en un procesador. Esto nos facilitaba, que estas variables que veiamos al principio (myrank), cada variable tenía un valor distinto. En una variable, el espacio es compartido. 
+Por tanto, desaparece el intercambio explícito de mensajes, pero **no desaparece la comunicación**: esta se realiza a través de la memoria compartida.
 
-Una variable que tiene un sentido algorítmico clave, requiere que cada uno tenga un valor distinto. Esto significará que necesitaremos algunas variables que sean privadas. Es decir, que en los diferentes procesos que tengan en ejecución concurrentemente, pueda almacenar valores distintos en cada uno de ellos.
+### Sincronización
 
-Una gestión de la memoria será una specto clave en el correcto funcionamiento y en la eficiencia, es decir, para reducir los tiempos ociosos. En openmp aparece un aspecto diferente, pero que está relacionado con MPI, y esto es LA GESTIÓN de la memoria.
+La **sincronización** coordina la ejecución de los hilos para que las operaciones que dependen unas de otras se realicen en el orden necesario.
 
-Donde se hacen las comunicaciones en MPI? La gestión se hace en la memoria. Hay cosas en OpenMP que si se hacen, queda claro que no sabemos lo que estamos haciendo.
+El profesor destaca su importancia en memoria compartida. Por ejemplo, para obtener el resultado de una reducción es necesario que estén disponibles las contribuciones que se van a combinar.
 
-## Modelo de ejecución
+> La coordinación puede estar incorporada en una operación o requerir mecanismos explícitos. La comparación de clase no debe interpretarse como que toda sincronización en MPI sea implícita y toda sincronización en OpenMP sea explícita.
 
-En la segunda clase, hablamos del modelo de ejecución `nodo de cómputo multicore y multiprocesador`. Cuando yo ejecuto un proceso, se le asigna una zona de memoria.
+## 3. Variables compartidas y privadas
 
-Yo voy a empezar un programa paralelo, que comenzará como secuencial y en algún momento se convertirá en paralelo.
+En MPI, cada proceso dispone de su propio espacio de memoria. Por eso, una variable como `myrank` puede tener un valor diferente en cada proceso.
 
-Dentro de mi ejecución secuencial, es deicr, dentro de mi zona de memoria que tengo asignada, y que porsupuesto puedo realizar las tareas de reserva dinámica.  La zona de memoria no es fija, es variable según la necesidad.
+En OpenMP hay que distinguir qué datos se comparten y cuáles necesita cada hilo por separado:
 
-Cuando tenga mas de un proceso, en mi ejecución, estos procesos podrán acceder a toda la memoria de la ejecución, porque la memoria es compartida. Pero de alguna manera, nosotros tenemos que tener variables almacenadas en memoria privada, es decir, que sean propias de cada una de los procesos. En principio estas variables privadas no deberían de poder comunnicarse directamente, pero a través de la memoria principal si.
+- Una **variable compartida** es un mismo dato al que pueden acceder varios hilos.
+- Una **variable privada** tiene una copia independiente para cada hilo que la utiliza, de modo que cada uno puede almacenar su propio valor.
 
-Esto serán mecanismos que tendremos que ver como se implementan.
+Esta distinción es necesaria cuando el algoritmo requiere que los hilos mantengan valores diferentes durante la ejecución concurrente. Para intercambiar los resultados de sus datos privados, los hilos necesitarán los mecanismos adecuados de comunicación y sincronización.
 
-## Aspecto que decidirá héctor si amplia o no:
-El mapeo de los procesos en los cores puede ser realizado por SO o indicado por usuario.
+La **gestión de la memoria** es clave tanto para la corrección del programa como para su eficiencia. Hay que decidir qué información se comparte, qué información es privada y cómo se coordinan los accesos a los datos compartidos.
+
+## 4. Modelo de ejecución
+
+El modelo presentado en clase parte de un **nodo de cómputo multicore o multiprocesador**.
+
+Al ejecutar un programa se crea un proceso con su espacio de memoria. Este puede realizar reservas dinámicas de memoria según sus necesidades.
+
+La ejecución de un programa OpenMP comienza de forma **secuencial** y, al llegar a una región paralela, pasa a utilizar varios **hilos**. Estos pertenecen al mismo proceso y comparten su espacio de memoria, aunque pueden trabajar con variables privadas.
+
+> En este contexto conviene distinguir **proceso** de **hilo**: el paralelismo de OpenMP se expresa mediante hilos dentro de un proceso.
+
+Los mecanismos concretos para declarar y gestionar los datos compartidos y privados se estudiarán más adelante.
+
+## 5. Asignación de hilos a núcleos
+
+El **mapeo de hilos a núcleos** consiste en decidir en qué núcleo de la CPU se ejecuta cada hilo.
+
+Héctor indicó que decidiría si ampliaba este tema y explicó las dos alternativas siguientes.
+
+El profesor plantea dos posibilidades:
+
+### Gestión por el sistema operativo
+
+El **sistema operativo (SO)** decide dónde ejecutar los hilos en función de la carga global del sistema y de sus políticas de planificación.
+
+La asignación puede cambiar durante la ejecución: el SO puede trasladar un hilo de un núcleo a otro para repartir la carga. El comportamiento concreto depende del sistema operativo.
+
+### Asignación indicada por el usuario
+
+El usuario puede indicar los núcleos en los que quiere que se ejecuten los hilos y restringir sus desplazamientos. Esta vinculación se conoce como **afinidad de hilos**.
+
+Según lo comentado en clase, controlar esta asignación puede ser útil cuando se busca una eficiencia elevada y se dispone del sistema en exclusiva. Permite planificar dónde se ejecuta cada hilo teniendo en cuenta la organización de los núcleos y la memoria.
+
+La asignación debe considerar la carga del sistema: fijar los hilos a determinados núcleos cuando el equipo se comparte con otras tareas puede perjudicar el rendimiento.
+
+### Influencia de la arquitectura y del uso del sistema
+
+El profesor relacionó esta decisión con la arquitectura multicore: en el ejemplo comentado, los cuatro núcleos comparten un mismo chip de CPU. La organización de los núcleos y de la memoria es importante para el rendimiento y debe tenerse en cuenta al decidir dónde ejecutar cada hilo.
+
+También señaló que hay que considerar si el sistema se utiliza en exclusiva. Si se comparte con otras tareas, fijar la asignación limita la capacidad del SO para mover los hilos y equilibrar la carga, por lo que puede perjudicar el rendimiento.
 
 
-Cuando estamos en MPI utilizamos nodos de cluster, y se especifica cuantos nodos queremos, y estos son los nodos que utilizamos.
+## Que es OpenMP
 
-Como decidimos en un sistema multicore? Porque lo que queremos es que en un hilo se ejecute un proceso, y en otro otro. Como gestionamos esto?
+Es un modelo basado en hilos o threads o procesos que deben usar caminos "hardware" diferentes de ejecución.
 
-1. Dejamos la gestión al SO. El sistema operativo es el que decide el que mapea esos hilos: El sistema operativo lo decidirá en función de la carga de trabajo global y de cada proceso. Es decir, la gestión es dinámica. Son capaces de que si un proceso está en un determinado core, y la carga sube, pasar ese proceso a otro core. Es decir, aquí lo que hace es **balancear la carga**.
-> Depende del SISTEMA OPERATIVO
-2. Decidir cada hilo en que core lo queremos, e impedir al sistema operativo que lo mueva. Así tenemos todo el control del sistema. Cuando normalmente queremos las maximas eficiencias y seguimos queriendo usar el sistema computacional en exclusiva, habrá que hacer una planificación de este tipo. Sabemos lo que tenemos en el sistema y podremos planificar cada uno de los procesos en el sistema computacional y evitar los cambios de core a core.
+Los diferentes hilos ejecutarán el mismo código, pero realizarán diferentes funcionalidades.
 
-Tenemos estas dos opciones.
+En algunos casos tendré que especificar explícitamente de forma análoga lo que debe de hacer cada hilo.
 
-1. La gestión al SO
-2. Impedir, o solicitar al SO que no haga cambios de Core
+Aquí aparecerán automatizadores, repartirá el trabajo sin yo explicitar exactamente como. De hecho a veces, yo no podré controlar lo que hace uno y lo que hace otro. El objetivo de los automatizadores será balancear la carga. Estamos en un sistema en el que es probable de que hayan mas procesos ejecutándose. Tenemos automatizadores que nos permitirán balancear la carga, es decir, nos permitirá mejorar la eficiencia ante situaciones de balanceo.
 
-Porque puedo querer yo decidir cada proceso en que core va? Para que: Los 4 cores comparten un chip de cpu. La memoria es muy importante para el rendimineto. 
+### Cosas que no vamos a usar
+A partir de OpenMP 3.0 permite el trabajo con tareas "tasks". Esto no lo vamos a ver aquí. Veremos un automatizador que un poco puede vincularse al uso de tareas en versiones mas avanzadas (en código no).
 
-Cuanto te perjudicaría decidir tú en que cores quieres que se ejecuten las cosas cuando no lo estas utilizando en exclusiva.
+No consideramos la utilización de HyperThreading.
 
-![Arquitectura multicore](arquitectura_multicore.png)
+Que es el HyperThreading
+> Cada core se supone que puede ejcutar eficientemente mas de un hilo. No tiene recursos computacionales separados. Será un core. Tiene mecanismos para en determinadas circunstancias poder ejecutar mas de un hilo. Con lo cual si hacemos un alto uso de la ALU, por mucho que quiera no podremos obtener un buen rendimiento.
+
+**ESTO NO LO VAMOS A HACER PORQUE NO NOS INTERESA EN HPC, APLICACIONES DE ALTO COSTE COMPUTACIONAL**
+
+
+## Cosas que vamos a ver
+* Modelo de ejecución
+* Compilación y ejecución
+* Qué es una directiva
+* Qué es una cláusula
+* Qué es una variable de entorno
+* Memoria compartida y memoria Privada
+
+# Modelo de Ejecución - Modelo FORK-JOIN
+
+Primer aspecto relevante: Mi ejecución se inicia siempre de forma secuencial.
+
+Yo solo tengo un código
+Yo solo tengo un compilado
+
+La ejecución va a ser en paralelo, pero en principio no lo vemos, mi ejecución no va a cambiar en secuencial. Si estoy en un sistema en linux, podré ejecutarlo en secuencial.
+
+Por lo tanto, la ejecución empezará siempre con un único hilo.
+
+Con loc ual si yo quiero ejecutar distintos recursos hardware, en algú momento tendré que generar por código y la herramienta de OpenMP tendré que generar HILOS en una determinada región, para ejecutar en paralelo un determinado código. En el momento de crearla decidiré.
+
+Puedo tener una región paralela con 3 hilos y otra con 8.
+
+Puedo tener una región paralela dentro de un bucle iterativo. 
+Aunque sea la misma región paralela, en cada iteración puede ser un número de hilos de manera variable.
+
+El número de hilos de cada región paralela se decide en ejecución, no en código. No tiene porque ser definido en código de manera literal.
+
+Cuando termina una región paralela, no terminará la ejecución, simplemente continuará la ejecución secuencial
+
+
