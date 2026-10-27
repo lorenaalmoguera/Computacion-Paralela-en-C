@@ -83,57 +83,32 @@ El profesor relacionó esta decisión con la arquitectura multicore: en el ejemp
 También señaló que hay que considerar si el sistema se utiliza en exclusiva. Si se comparte con otras tareas, fijar la asignación limita la capacidad del SO para mover los hilos y equilibrar la carga, por lo que puede perjudicar el rendimiento.
 
 
-## Que es OpenMP
+## Qué es OpenMP y cómo se reparte el trabajo
 
-Es un modelo basado en hilos o threads o procesos que deben usar caminos "hardware" diferentes de ejecución.
+OpenMP se basa en **hilos de un mismo proceso**. Los hilos ejecutan el código de una región paralela, pero pueden realizar trabajos diferentes mediante condiciones explícitas o mecanismos de reparto de trabajo.
 
-Los diferentes hilos ejecutarán el mismo código, pero realizarán diferentes funcionalidades.
+En clase se denominan **automatizadores** a los mecanismos que distribuyen trabajo entre los hilos sin tener que programar manualmente cada asignación. El reparto puede ayudar a equilibrar la carga; su comportamiento depende del mecanismo y de la planificación elegida. Este reparto entre hilos es distinto de la asignación de los hilos a cores que realiza el sistema operativo.
 
-En algunos casos tendré que especificar explícitamente de forma análoga lo que debe de hacer cada hilo.
+### Contenidos fuera del alcance de la asignatura
 
-Aquí aparecerán automatizadores, repartirá el trabajo sin yo explicitar exactamente como. De hecho a veces, yo no podré controlar lo que hace uno y lo que hace otro. El objetivo de los automatizadores será balancear la carga. Estamos en un sistema en el que es probable de que hayan mas procesos ejecutándose. Tenemos automatizadores que nos permitirán balancear la carga, es decir, nos permitirá mejorar la eficiencia ante situaciones de balanceo.
+- **Tareas (`tasks`)**: introducidas en OpenMP 3.0. No se estudiará su programación en esta asignatura, aunque algunos mecanismos de reparto pueden servir como introducción conceptual.
+- **HyperThreading**: permite que un core físico presente varios procesadores lógicos. Estos comparten recursos del core, por lo que no equivalen a cores físicos independientes. En cargas que utilizan intensamente las unidades de cálculo, añadir hilos lógicos no garantiza una mejora. **En el modelo de HPC de esta asignatura utilizaremos un hilo por core físico**; esto es una decisión del curso, no una prohibición general de HyperThreading en HPC.
 
-### Cosas que no vamos a usar
-A partir de OpenMP 3.0 permite el trabajo con tareas "tasks". Esto no lo vamos a ver aquí. Veremos un automatizador que un poco puede vincularse al uso de tareas en versiones mas avanzadas (en código no).
+## Contenidos que vamos a estudiar
 
-No consideramos la utilización de HyperThreading.
+- Modelo de ejecución.
+- Compilación y ejecución.
+- Directivas y cláusulas.
+- Funciones de OpenMP y variables de entorno.
+- Memoria compartida y variables privadas.
 
-Que es el HyperThreading
-> Cada core se supone que puede ejcutar eficientemente mas de un hilo. No tiene recursos computacionales separados. Será un core. Tiene mecanismos para en determinadas circunstancias poder ejecutar mas de un hilo. Con lo cual si hacemos un alto uso de la ALU, por mucho que quiera no podremos obtener un buen rendimiento.
+## Modelo de ejecución FORK–JOIN
 
-**ESTO NO LO VAMOS A HACER PORQUE NO NOS INTERESA EN HPC, APLICACIONES DE ALTO COSTE COMPUTACIONAL**
+Partimos de **un mismo código fuente y un ejecutable cuya ejecución comienza con un único hilo**. Al alcanzar una región paralela, OpenMP forma un equipo de hilos para ejecutar ese bloque. Al terminar la región, el hilo inicial continúa la ejecución secuencial.
 
+El número de hilos puede ser diferente entre regiones: por ejemplo, una puede utilizar tres y otra ocho. También puede variar entre distintas entradas a una región situada dentro de un bucle.
 
-## Cosas que vamos a ver
-* Modelo de ejecución
-* Compilación y ejecución
-* Qué es una directiva
-* Qué es una cláusula
-* Qué es una variable de entorno
-* Memoria compartida y memoria Privada
-
-# Modelo de Ejecución - Modelo FORK-JOIN
-
-Primer aspecto relevante: Mi ejecución se inicia siempre de forma secuencial.
-
-Yo solo tengo un código
-Yo solo tengo un compilado
-
-La ejecución va a ser en paralelo, pero en principio no lo vemos, mi ejecución no va a cambiar en secuencial. Si estoy en un sistema en linux, podré ejecutarlo en secuencial.
-
-Por lo tanto, la ejecución empezará siempre con un único hilo.
-
-Con loc ual si yo quiero ejecutar distintos recursos hardware, en algú momento tendré que generar por código y la herramienta de OpenMP tendré que generar HILOS en una determinada región, para ejecutar en paralelo un determinado código. En el momento de crearla decidiré.
-
-Puedo tener una región paralela con 3 hilos y otra con 8.
-
-Puedo tener una región paralela dentro de un bucle iterativo. 
-Aunque sea la misma región paralela, en cada iteración puede ser un número de hilos de manera variable.
-
-El número de hilos de cada región paralela se decide en ejecución, no en código. No tiene porque ser definido en código de manera literal.
-
-Cuando termina una región paralela, no terminará la ejecución, simplemente continuará la ejecución secuencial
-
+**El tamaño efectivo del equipo se determina en ejecución**, según las indicaciones del programa, la configuración de OpenMP y los límites aplicables. Puede solicitarse desde el código o mediante variables de entorno; no tiene por qué ser una constante escrita literalmente en el programa.
 
 ### Ejecución FORK–JOIN y aprovechamiento de los recursos en HPC
 
@@ -225,100 +200,95 @@ En el modelo de trabajo de la asignatura, utilizaremos esta distribución solo s
 Este ejemplo supone que el paralelismo anidado está habilitado y que la configuración de ejecución permite formar los equipos con los tamaños indicados.
 
 
-# Ejemplos código
+## Ejemplo de reparto automático de un bucle
+
+El siguiente ejemplo es ilustrativo. Los datos se reservan e inicializan antes de entrar en la región paralela y cada iteración modifica un elemento diferente:
 
 ```c
-#include <omp.h> //directivas de preprocesador. facilitan el desarrollo y/o compilación condicional
 #include <stdio.h>
 
-int main(){
-    int i;
-    double *datos; //datos a procesar
+int main(void) {
+    double datos[1000] = {0};
 
-    //...
-    #pragma omp for // = utilizame una característica o aplica alguna característica diferencial del compilador. cuando ponemos omp, es que sea de openmp. y cual característica? el for. Esto es un automatizador que reparte trabajo.
-    for(i = 0 ; i<100000;i++){
-        función_procesamiento(&datos[i]);
-    }
-}
-```
-
-En este ejemplo lo que vemos es que el sistema operativo es el que decide la cantidad de hilos.
-
-Héctor quiere que nosotros seamos los que repartamos el trabajo, y los que decidamos como se reparte, por lo que, realizar la práctica así no valdría. Simplemente es un ejemplo ilustrativo.
-
-
-El macro resumen es que funcionaría.
-
-## Directivas, Clausulas, FUnciones o subrutinas y variables de entorno
-Aunque OpenMP está basado en directivas tendremos que conocer los distintos tipos de clausulas existentes que varian el comportamiento de las directivas.
-
-Nosotros tendremos que conocer que funciones existen, estas funciones o subrutinas. Estas serán muy poquitas en la asignatuara.
-
-Es importante el tema de las variables de entorno, tomadas como valores por efectos. En el ejemplo anterior el número de hilos está especificado en alguna variable de entorno.
-
-
-## Característica de los códigos en OpenMP.
-
-Cuando yo compile, le diré en mi sentencia de compilación, le diremos que si queremos que compilemos atendiendo a las sentencias de OpenMP, es decir, haciendo casos a estas directivas, o compilamos sin tenerlas en cuentas, es decir, que contarian como comentarios.
-
-Esto significa que si nosotros ponemos directivas, esto significa que el codigo secuencial y paralelo podrá ejecutarse. Es decir, que será exactamente lo mismo.
-
-Esto se denomina **NO INTRUSIVO**.
-
-Si yo añado funciones, ya mi código secuencial cambia, pero yo puedo utilizar herramientas para seguir manteniendo el código secuencial invariable.
-
-
-
-Como podemos mantener el código en secuencial INVARIABLE??? pues con directivas
-```c
-#include <omp.h>
-#include <stdio.h>
-
-int main(){
-    int np;
-
-    #if defined (_OPENMP) //directiva en seucencial para mantener el código invariable
-        np = omp_get_num_threads();
-    #endif
-    //...
-
-    #pragma omp for
-        for(i = 0 ; i < 1000 ; i++){
-            funcion_procesamiento(&datos[i]);
+    #pragma omp parallel
+    {
+        #pragma omp for
+        for (int i = 0; i < 1000; ++i) {
+            datos[i] = (double)i * i;
         }
+    }
+
+    printf("Último resultado: %.0f\n", datos[999]);
+    return 0;
 }
 ```
 
-Solo cuando compile con las extensiones de openmp, el compiladador usará lo que está dentro de la directiva. Es por esto que el código se mantiene ejecutable Porque ignoramo el código dentro de lo condicional.
+**`parallel` forma el equipo de hilos y `for` reparte las iteraciones entre los hilos de ese equipo.** Un `omp for` aislado no crea por sí solo un equipo paralelo. Las iteraciones deben poder ejecutarse concurrentemente sin dependencias que invaliden el reparto.
 
-Es una definición, no una constante.
+El número de hilos lo gestiona el **entorno de ejecución de OpenMP**, de acuerdo con la configuración y las indicaciones del programa. El sistema operativo planifica dónde se ejecutan esos hilos.
 
-# Recordatorio MPI
-vamos a contrastar el diseño paralelo.
+Según lo indicado por Héctor, en la práctica tendremos que **implementar explícitamente el reparto del trabajo**. Este automatizador sirve para ilustrar OpenMP, pero no sustituye el reparto manual que se pide en la práctica.
 
-Cuando yo decidía que el rpoceso 0 hacia el reparto de trabajo, me aparecia el patrón de comunicaciones.
+## Directivas, cláusulas, funciones y variables de entorno
 
-Antes, debemos saber, cuanta información hay que enviar a cada proceso, para luego poder reservar ese espacio necesario en cada proceso.
+- **Directivas**: indican operaciones de OpenMP al compilador, por ejemplo `#pragma omp parallel` o `#pragma omp for`. En C/C++, `#pragma` introduce una directiva y `omp` identifica las de OpenMP.
+- **Cláusulas**: modifican el comportamiento de una directiva, por ejemplo `num_threads(4)` para solicitar un equipo de cuatro hilos.
+- **Funciones de biblioteca**: permiten consultar o configurar aspectos de la ejecución. Sus declaraciones están en `<omp.h>`. En la asignatura utilizaremos unas pocas.
+- **Variables de entorno**: configuran valores de OpenMP sin modificar el código, por ejemplo `OMP_NUM_THREADS`. Su efecto depende de las indicaciones del programa y de los límites de ejecución.
 
-Estamos hablando de cantidad de información global a transferir.
+## Compilación y compatibilidad con la ejecución secuencial
 
-Cuantos mensajes depende de como tenia de como esta estructurada la memoria.
+El compilador necesita una opción para habilitar OpenMP. Si se compila sin ese soporte y el compilador ignora las directivas `omp`, los bloques y bucles se ejecutan como código secuencial ordinario.
 
-Diseño paralelo, reparto de trabajo, etc... Se hace en MPI.
+Este carácter **no intrusivo** permite mantener una versión secuencial y otra paralela a partir del mismo código fuente. Para conservar resultados equivalentes, el algoritmo debe ser correcto en ambos casos; añadir directivas no garantiza por sí solo esa equivalencia.
 
-Desde el punto de vista en arquitectura, la cosa se ha simplificado. SIN EMBARGO!!!!!!!!11
+Si se utilizan funciones de la biblioteca de OpenMP, también hay que proteger esas llamadas y, cuando corresponda, la inclusión de `<omp.h>`, para que la versión secuencial no dependa de la biblioteca.
 
-En OpenMP, nosotros también decidimos el mismo reparto de trabajo y este se debe implementar.
+### Compilación condicional con `_OPENMP`
 
-4 filas hilo 0,
-4 filas hilo 1,
-4 filas hilo 2
+```c
+#include <stdio.h>
 
-Tenemos que comunicar algo? No. Solo debemos de implementar el reparto de trabajo.
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-El hilo secuencial ya tiene toda la información. Cuando entramos en la región paralela todos los hilos pueden acceder a todos los datos. Con lo cual han desaparecido algunas comunicaciones. Entonces, me ha desaparecido la reserva diferencial de memoria. Cuantos datos hay que procesar? Estos datos.
+int main(void) {
+    int np = 1;  // Valor para la compilación sin OpenMP.
 
-Aquí esa gestión la hara el hilo 0, es decir, el hilo secuencial.
+    #pragma omp parallel
+    {
+        #pragma omp single
+        {
+#ifdef _OPENMP
+            np = omp_get_num_threads();
+#endif
+        }
+    }
 
-Lo lógico es que la gestión la haga el hilo secuencial, que es el hilo 0. Pero por poder, podriamos hacer que los datos los leyese otro hilo.
+    printf("Hilos del equipo: %d\n", np);
+    return 0;
+}
+```
+
+**`_OPENMP` es una macro del preprocesador**, definida cuando se habilita OpenMP; tiene un valor numérico que identifica la versión soportada según la especificación. `#ifdef _OPENMP` permite incluir código únicamente en esa compilación. No es una variable del programa.
+
+En el ejemplo, `single` hace que un único hilo consulte y guarde el tamaño del equipo. **`omp_get_num_threads()` se llama dentro de la región paralela**; si se llamara desde la parte secuencial, devolvería 1. Al finalizar la región, el hilo inicial puede imprimir el valor guardado. Sin soporte OpenMP, se conserva el valor inicial `np = 1`.
+
+## Recordatorio de MPI: diseño paralelo y reparto de datos
+
+En MPI, cuando el proceso 0 reparte el trabajo, debemos diseñar también el patrón de comunicaciones. Primero hay que determinar qué datos necesita cada proceso y cuánto espacio debe reservar para recibirlos. La cantidad de mensajes depende de la distribución de los datos, su disposición en memoria y la forma de comunicarlos.
+
+En OpenMP también debemos **diseñar e implementar el reparto del trabajo**. Por ejemplo, podemos asignar cuatro filas al hilo 0, otras cuatro al hilo 1 y otras cuatro al hilo 2.
+
+La diferencia es que, si los datos ya están en memoria compartida, **no hace falta enviarlos a cada hilo mediante mensajes como en MPI**. Cada hilo puede acceder a las filas que le corresponden. Esto simplifica la distribución de los datos, pero no elimina la necesidad de coordinar accesos y sincronizar cuando haya dependencias.
+
+En el esquema de clase, lo habitual es que el hilo inicial —hilo 0 de la región exterior— lea los datos y reserve la memoria compartida antes de entrar en la región paralela. No hace falta una reserva y una copia de entrada independiente por hilo para ese reparto. Aun así, pueden necesitarse datos privados o memoria auxiliar.
+
+La lectura y la gestión de los datos también podrían encargarse a otro hilo, siempre que se garantice que los datos estén disponibles antes de utilizarlos.
+
+### Referencias de consulta
+
+- [Reparto de iteraciones con `for`: especificación de OpenMP](https://www.openmp.org/spec-html/5.2/openmpse66.html).
+- [Referencia oficial de OpenMP: funciones y configuración de equipos](https://www.openmp.org/wp-content/uploads/OpenMPRefCard-5-2-web.pdf).
+
