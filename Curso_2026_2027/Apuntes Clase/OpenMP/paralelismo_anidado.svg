@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="840" viewBox="0 0 1440 840">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L8 3L0 6" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="1440" height="840" fill="#f8fafc"/>
+<g font-family="Segoe UI,Arial,sans-serif" fill="#0f172a">
+<text x="45" y="48" font-size="30" font-weight="700">OpenMP · Paralelismo anidado</text>
+<text x="45" y="82" font-size="19">Región exterior: 4 hilos · Cada hilo puede iniciar su propio equipo anidado</text>
+<rect x="180" y="110" width="1060" height="578" rx="12" fill="#e2e8f0"/>
+<rect x="510" y="110" width="390" height="578" fill="#fef3c7"/>
+<text x="705" y="138" text-anchor="middle" font-size="18" font-weight="700" fill="#92400e">COINCIDEN LOS TRES EQUIPOS ANIDADOS</text>
+<g font-size="19" font-weight="600"><text x="40" y="210">Hilo 1</text><text x="40" y="330">Hilo 2</text><text x="40" y="430">Hilo 3</text><text x="40" y="575">Hilo 4</text></g>
+<g stroke-width="5" fill="none"><path d="M190 204H310 M1060 204H1230" stroke="#2563eb"/><path d="M190 324H410 M1140 324H1230" stroke="#0891b2"/><path d="M190 424H1230" stroke="#7c3aed"/><path d="M190 569H510 M990 569H1230" stroke="#059669"/></g>
+<rect x="310" y="156" width="750" height="94" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<rect x="410" y="268" width="730" height="112" rx="8" fill="#cffafe" stroke="#0891b2"/>
+<rect x="510" y="463" width="480" height="211" rx="8" fill="#d1fae5" stroke="#059669"/>
+<g font-size="17" font-weight="600"><text x="330" y="180">Equipo anidado: 3 hilos</text><text x="430" y="291">Equipo anidado: 6 hilos</text><text x="530" y="487">Equipo anidado: 15 hilos</text><text x="540" y="411" fill="#6d28d9">Sin región anidada: 1 hilo continúa trabajando</text></g><path d="M330 197H1040" stroke="#2563eb" stroke-width="4"/><path d="M330 214H1040" stroke="#2563eb" stroke-width="4"/><path d="M330 231H1040" stroke="#2563eb" stroke-width="4"/><path d="M430 305H1120" stroke="#0891b2" stroke-width="4"/><path d="M430 317H1120" stroke="#0891b2" stroke-width="4"/><path d="M430 329H1120" stroke="#0891b2" stroke-width="4"/><path d="M430 341H1120" stroke="#0891b2" stroke-width="4"/><path d="M430 353H1120" stroke="#0891b2" stroke-width="4"/><path d="M430 365H1120" stroke="#0891b2" stroke-width="4"/><path d="M530 503H970" stroke="#059669" stroke-width="4"/><path d="M530 514H970" stroke="#059669" stroke-width="4"/><path d="M530 525H970" stroke="#059669" stroke-width="4"/><path d="M530 536H970" stroke="#059669" stroke-width="4"/><path d="M530 547H970" stroke="#059669" stroke-width="4"/><path d="M530 558H970" stroke="#059669" stroke-width="4"/><path d="M530 569H970" stroke="#059669" stroke-width="4"/><path d="M530 580H970" stroke="#059669" stroke-width="4"/><path d="M530 591H970" stroke="#059669" stroke-width="4"/><path d="M530 602H970" stroke="#059669" stroke-width="4"/><path d="M530 613H970" stroke="#059669" stroke-width="4"/><path d="M530 624H970" stroke="#059669" stroke-width="4"/><path d="M530 635H970" stroke="#059669" stroke-width="4"/><path d="M530 646H970" stroke="#059669" stroke-width="4"/><path d="M530 657H970" stroke="#059669" stroke-width="4"/><path d="M900 149V683" stroke="#d97706" stroke-width="3" stroke-dasharray="7 5"/>
+<g font-size="18" text-anchor="middle" font-weight="700"><text x="1320" y="210" fill="#2563eb">3 hilos</text><text x="1320" y="330" fill="#0891b2">6 hilos</text><text x="1320" y="430" fill="#7c3aed">1 hilo</text><text x="1320" y="575" fill="#059669">15 hilos</text></g>
+<g stroke="#dc2626" stroke-width="4"><path d="M1060 184V245"/><path d="M1140 297V375"/><path d="M990 495V669"/></g><g font-size="14" fill="#b91c1c" font-weight="700"><text x="1070" y="241">JOIN propio</text><text x="1150" y="371">JOIN propio</text><text x="1000" y="650">JOIN propio</text></g><path d="M190 710H1230" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="710" y="735" font-size="17" text-anchor="middle">Tiempo → · Cada JOIN sincroniza solo su equipo; los demás siguen trabajando · Duraciones ilustrativas</text>
+<rect x="45" y="755" width="1350" height="63" rx="10" fill="#0f172a"/>
+<text x="720" y="782" fill="white" font-size="22" text-anchor="middle" font-weight="700">Máximo simultáneo: 3 + 6 + 1 + 15 = 25 hilos → 25 cores físicos disponibles</text>
+<text x="720" y="805" fill="#cbd5e1" font-size="17" text-anchor="middle">Cada equipo incluye al hilo que lo inicia. No se añaden otros 4 hilos exteriores al total.</text>
+</g></svg>
+
