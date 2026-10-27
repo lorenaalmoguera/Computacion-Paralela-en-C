@@ -223,3 +223,102 @@ El requisito depende del **solapamiento temporal**: si las regiones anidadas no 
 En el modelo de trabajo de la asignatura, utilizaremos esta distribución solo si contamos con los cores necesarios. Si únicamente tenemos cuatro cores asignados, crear más hilos no proporciona más cores y puede introducir competencia por los recursos y costes de planificación. **El objetivo es acelerar el trabajo costoso con recursos disponibles, no simplemente aumentar el número de hilos.**
 
 Este ejemplo supone que el paralelismo anidado está habilitado y que la configuración de ejecución permite formar los equipos con los tamaños indicados.
+
+
+# Ejemplos código
+
+```c
+#include <omp.h> //directivas de preprocesador. facilitan el desarrollo y/o compilación condicional
+#include <stdio.h>
+
+int main(){
+    int i;
+    double *datos; //datos a procesar
+
+    //...
+    #pragma omp for // = utilizame una característica o aplica alguna característica diferencial del compilador. cuando ponemos omp, es que sea de openmp. y cual característica? el for. Esto es un automatizador que reparte trabajo.
+    for(i = 0 ; i<100000;i++){
+        función_procesamiento(&datos[i]);
+    }
+}
+```
+
+En este ejemplo lo que vemos es que el sistema operativo es el que decide la cantidad de hilos.
+
+Héctor quiere que nosotros seamos los que repartamos el trabajo, y los que decidamos como se reparte, por lo que, realizar la práctica así no valdría. Simplemente es un ejemplo ilustrativo.
+
+
+El macro resumen es que funcionaría.
+
+## Directivas, Clausulas, FUnciones o subrutinas y variables de entorno
+Aunque OpenMP está basado en directivas tendremos que conocer los distintos tipos de clausulas existentes que varian el comportamiento de las directivas.
+
+Nosotros tendremos que conocer que funciones existen, estas funciones o subrutinas. Estas serán muy poquitas en la asignatuara.
+
+Es importante el tema de las variables de entorno, tomadas como valores por efectos. En el ejemplo anterior el número de hilos está especificado en alguna variable de entorno.
+
+
+## Característica de los códigos en OpenMP.
+
+Cuando yo compile, le diré en mi sentencia de compilación, le diremos que si queremos que compilemos atendiendo a las sentencias de OpenMP, es decir, haciendo casos a estas directivas, o compilamos sin tenerlas en cuentas, es decir, que contarian como comentarios.
+
+Esto significa que si nosotros ponemos directivas, esto significa que el codigo secuencial y paralelo podrá ejecutarse. Es decir, que será exactamente lo mismo.
+
+Esto se denomina **NO INTRUSIVO**.
+
+Si yo añado funciones, ya mi código secuencial cambia, pero yo puedo utilizar herramientas para seguir manteniendo el código secuencial invariable.
+
+
+
+Como podemos mantener el código en secuencial INVARIABLE??? pues con directivas
+```c
+#include <omp.h>
+#include <stdio.h>
+
+int main(){
+    int np;
+
+    #if defined (_OPENMP) //directiva en seucencial para mantener el código invariable
+        np = omp_get_num_threads();
+    #endif
+    //...
+
+    #pragma omp for
+        for(i = 0 ; i < 1000 ; i++){
+            funcion_procesamiento(&datos[i]);
+        }
+}
+```
+
+Solo cuando compile con las extensiones de openmp, el compiladador usará lo que está dentro de la directiva. Es por esto que el código se mantiene ejecutable Porque ignoramo el código dentro de lo condicional.
+
+Es una definición, no una constante.
+
+# Recordatorio MPI
+vamos a contrastar el diseño paralelo.
+
+Cuando yo decidía que el rpoceso 0 hacia el reparto de trabajo, me aparecia el patrón de comunicaciones.
+
+Antes, debemos saber, cuanta información hay que enviar a cada proceso, para luego poder reservar ese espacio necesario en cada proceso.
+
+Estamos hablando de cantidad de información global a transferir.
+
+Cuantos mensajes depende de como tenia de como esta estructurada la memoria.
+
+Diseño paralelo, reparto de trabajo, etc... Se hace en MPI.
+
+Desde el punto de vista en arquitectura, la cosa se ha simplificado. SIN EMBARGO!!!!!!!!11
+
+En OpenMP, nosotros también decidimos el mismo reparto de trabajo y este se debe implementar.
+
+4 filas hilo 0,
+4 filas hilo 1,
+4 filas hilo 2
+
+Tenemos que comunicar algo? No. Solo debemos de implementar el reparto de trabajo.
+
+El hilo secuencial ya tiene toda la información. Cuando entramos en la región paralela todos los hilos pueden acceder a todos los datos. Con lo cual han desaparecido algunas comunicaciones. Entonces, me ha desaparecido la reserva diferencial de memoria. Cuantos datos hay que procesar? Estos datos.
+
+Aquí esa gestión la hara el hilo 0, es decir, el hilo secuencial.
+
+Lo lógico es que la gestión la haga el hilo secuencial, que es el hilo 0. Pero por poder, podriamos hacer que los datos los leyese otro hilo.
