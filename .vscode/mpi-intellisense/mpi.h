@@ -10,6 +10,7 @@ typedef int MPI_Op;
 typedef struct { int MPI_SOURCE, MPI_TAG, MPI_ERROR; } MPI_Status;
 #define MPI_COMM_WORLD ((MPI_Comm)0)
 #define MPI_INT ((MPI_Datatype)1)
+#define MPI_DOUBLE ((MPI_Datatype)2)
 #define MPI_SUM ((MPI_Op)1)
 #define MPI_MAX ((MPI_Op)2)
 #define MPI_MIN ((MPI_Op)3)
