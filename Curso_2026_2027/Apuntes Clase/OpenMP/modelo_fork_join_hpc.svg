@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="660" viewBox="0 0 1400 660">
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L8 3L0 6" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="1400" height="660" fill="#f8fafc"/>
+<g font-family="Segoe UI,Arial,sans-serif" fill="#0f172a">
+<text x="55" y="52" font-size="30" font-weight="700">OpenMP · Modelo FORK–JOIN en HPC</text>
+<text x="55" y="88" font-size="20">4 cores físicos reservados en exclusiva · 4 hilos en las regiones paralelas · Sin HyperThreading</text>
+<rect x="190" y="124" width="95" height="350" rx="10" fill="#fef3c7"/>
+<rect x="305" y="124" width="425" height="350" rx="10" fill="#dbeafe"/>
+<rect x="750" y="124" width="95" height="350" rx="10" fill="#fef3c7"/>
+<rect x="865" y="124" width="425" height="350" rx="10" fill="#dbeafe"/>
+<rect x="1310" y="124" width="65" height="350" rx="10" fill="#fef3c7"/>
+<g font-size="17" text-anchor="middle" font-weight="600">
+<text x="237" y="153">Secuencial</text><text x="517" y="153">REGIÓN PARALELA 1</text><text x="797" y="153">Secuencial</text><text x="1077" y="153">REGIÓN PARALELA 2</text><text x="1342" y="153">Fin</text>
+</g>
+<g stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 6">
+<path d="M190 280H285 M750 280H845 M1310 280H1375"/><path d="M190 350H285 M750 350H845 M1310 350H1375"/><path d="M190 420H285 M750 420H845 M1310 420H1375"/>
+</g>
+<g stroke="#64748b" stroke-width="2" fill="none">
+<path d="M285 210L305 280 M285 210L305 350 M285 210L305 420 M730 280L750 210 M730 350L750 210 M730 420L750 210"/>
+<path d="M845 210L865 280 M845 210L865 350 M845 210L865 420 M1290 280L1310 210 M1290 350L1310 210 M1290 420L1310 210"/>
+</g>
+<g font-size="18" font-weight="600">
+<text x="40" y="216">Hilo 0 · Core 0</text><text x="40" y="286">Hilo 1 · Core 1</text><text x="40" y="356">Hilo 2 · Core 2</text><text x="40" y="426">Hilo 3 · Core 3</text>
+</g>
+<path d="M190 210H1375" stroke="#2563eb" stroke-width="16"/>
+<g stroke-width="16"><path d="M305 280H730 M865 280H1290" stroke="#0891b2"/><path d="M305 350H730 M865 350H1290" stroke="#7c3aed"/><path d="M305 420H730 M865 420H1290" stroke="#059669"/></g>
+<g font-size="15" fill="#92400e" text-anchor="middle"><text x="237" y="319">3 cores</text><text x="237" y="340">ociosos</text><text x="797" y="319">3 cores</text><text x="797" y="340">ociosos</text></g>
+<g font-size="17" text-anchor="middle" font-weight="700"><text x="305" y="499">FORK</text><text x="730" y="499">JOIN</text><text x="865" y="499">FORK</text><text x="1290" y="499">JOIN</text></g>
+<path d="M190 532H1370" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="770" y="557" font-size="17" text-anchor="middle">Tiempo → · Anchos ilustrativos: tramos secuenciales cortos y regiones paralelas largas</text>
+<rect x="55" y="580" width="1320" height="58" rx="10" fill="#0f172a"/>
+<text x="715" y="616" font-size="23" fill="white" font-weight="600" text-anchor="middle">OBJETIVO: minimizar el tiempo secuencial y mantener los 4 cores haciendo trabajo útil en paralelo.</text>
+</g></svg>

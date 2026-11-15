@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="650" viewBox="0 0 1360 650">
+<defs><pattern id="wait" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#fef3c7"/><path d="M0 10L10 0" stroke="#fbbf24" stroke-width="2"/></pattern><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L8 3L0 6" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="1360" height="650" fill="#f8fafc"/>
+<g font-family="Segoe UI,Arial,sans-serif" fill="#0f172a">
+<text x="50" y="52" font-size="29" font-weight="700">Sincronización · La región paralela termina cuando llega el último hilo</text>
+<text x="50" y="88" font-size="19">HPC · 4 cores en exclusiva · Los hilos pueden terminar en momentos distintos</text>
+<rect x="200" y="125" width="800" height="345" rx="12" fill="#eff6ff"/>
+<text x="590" y="155" font-size="20" text-anchor="middle" font-weight="600">REGIÓN PARALELA</text>
+<g font-size="19" font-weight="600"><text x="45" y="222">Hilo 0 · Core 0</text><text x="45" y="292">Hilo 1 · Core 1</text><text x="45" y="362">Hilo 2 · Core 2</text><text x="45" y="432">Hilo 3 · Core 3</text></g>
+<g><rect x="210" y="200" width="440" height="30" rx="4" fill="#2563eb"/><rect x="650" y="200" width="350" height="30" fill="url(#wait)"/>
+<rect x="210" y="270" width="600" height="30" rx="4" fill="#0891b2"/><rect x="810" y="270" width="190" height="30" fill="url(#wait)"/>
+<rect x="210" y="340" width="510" height="30" rx="4" fill="#7c3aed"/><rect x="720" y="340" width="280" height="30" fill="url(#wait)"/>
+<rect x="210" y="410" width="790" height="30" rx="4" fill="#059669"/></g>
+<g font-size="17" text-anchor="middle" fill="#92400e"><text x="825" y="222">Espera</text><text x="905" y="292">Espera</text><text x="860" y="362">Espera</text></g>
+<path d="M1000 175V460" stroke="#dc2626" stroke-width="5"/>
+<text x="1000" y="483" text-anchor="middle" fill="#b91c1c" font-size="19" font-weight="700">BARRERA / JOIN</text>
+<text x="1000" y="507" text-anchor="middle" fill="#b91c1c" font-size="17" font-weight="700">PUNTO DE SINCRONIZACIÓN</text>
+<text x="980" y="397" text-anchor="end" fill="#047857" font-size="16">Último hilo en terminar</text>
+<path d="M1000 215H1300" stroke="#2563eb" stroke-width="16"/>
+<g fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 5"><path d="M1000 285H1300 M1000 355H1300 M1000 425H1300"/></g>
+<text x="1150" y="155" text-anchor="middle" font-size="20" font-weight="600">SECUENCIAL</text>
+<text x="1150" y="253" text-anchor="middle" font-size="17">Continúa el hilo inicial</text>
+<text x="1150" y="378" text-anchor="middle" font-size="17" fill="#64748b">Otros cores sin trabajo</text>
+<text x="1150" y="400" text-anchor="middle" font-size="17" fill="#64748b">del programa</text>
+<path d="M210 525H1300" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="750" y="550" font-size="17" text-anchor="middle">Tiempo → · La continuación secuencial espera a que todos hayan terminado</text>
+<rect x="50" y="580" width="1260" height="48" rx="10" fill="#0f172a"/>
+<text x="680" y="611" fill="white" font-size="21" text-anchor="middle">Mejor aprovechamiento: equilibrar el trabajo, reducir esperas y minimizar la parte secuencial.</text>
+</g></svg>
