@@ -34,6 +34,14 @@ Con `schedule(static, tamaño)`, las iteraciones se dividen en bloques del tama�
 | 1 | 2–3 y 8–9 |
 | 2 | 4–5 y 10–11 |
 
+El reparto anterior se puede visualizar así: cada bloque contiene dos iteraciones y se asigna por turnos.
+
+```text
+Bloques:  [0, 1] [2, 3] [4, 5] [6, 7] [8, 9] [10, 11]
+             ↓      ↓      ↓      ↓      ↓       ↓
+Hilo:        0      1      2      0      1       2
+```
+
 Si se escribe `schedule(static)` sin tamaño, el espacio de iteraciones se divide en bloques aproximadamente iguales, como máximo uno por hilo; el tamaño exacto depende de la implementación. Es una opción útil cuando las iteraciones tienen costes parecidos y se busca poco coste de planificación.
 
 ### `dynamic`
@@ -63,6 +71,20 @@ for (int i = 0; i < 100; i++) {
 ```
 
 En general, bloques pequeños permiten ajustar mejor el reparto, pero aumentan el coste de planificación. El mejor tamaño depende del trabajo y debe medirse.
+
+### `runtime` y `auto`
+
+- `schedule(runtime)` toma el tipo de planificación y el tamaño de bloque de la configuración de ejecución. Se puede inicializar con `OMP_SCHEDULE` y modificar con `omp_set_schedule`. Así se pueden comparar estrategias sin recompilar el bucle.
+- `schedule(auto)` deja la decisión del reparto al compilador o al sistema de ejecución. No garantiza un reparto concreto.
+
+```c
+#pragma omp parallel for schedule(runtime)
+for (int i = 0; i < n; i++) {
+    procesar(i);
+}
+```
+
+Por ejemplo, con `OMP_SCHEDULE=dynamic,2` se utiliza reparto dinámico en bloques de dos. Véase la sección de variables de entorno del 24 de noviembre.
 
 # Construcciones de reparto
 

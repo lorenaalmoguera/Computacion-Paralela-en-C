@@ -61,6 +61,24 @@ En la primera iteración se solicitan tres hilos. Al entrar, `copyin` les da a t
 | 1 | 14 | 34 |
 | 2 | 14 | 44 |
 
+Este esquema sigue la primera región del ejemplo; cada hilo trabaja con una copia independiente:
+
+```text
+Antes de entrar: fp del hilo principal = 14
+                           │
+                        copyin
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+           hilo 0       hilo 1       hilo 2
+            fp=14        fp=14        fp=14
+              │            │            │
+             +10          +20          +30
+              ▼            ▼            ▼
+            fp=24        fp=34        fp=44
+              │
+              └── continúa fuera y suma 1000 → fp=1024
+```
+
 Las copias no se suman entre sí. El hilo principal continúa con su copia, 24, y le suma 1000. En la siguiente región, `copyin` copia **1024**, no 14. La evolución de la copia del hilo principal es:
 
 | Iteración | Valor al entrar, copiado por `copyin` | Después de la región | Después de sumar 1000 |
@@ -73,7 +91,7 @@ Por tanto, `copyin` no copia necesariamente el valor inicial de la variable: cop
 
 
 
-La gestion de la memoria: el valor inicial de la primera vez que se gestiona esa memoria es el valor inicar para el resto de los hilos.
+La inicialización de cada copia `threadprivate` y su persistencia dependen de las reglas de OpenMP. `copyin` establece expresamente el valor de las copias a partir del hilo principal al entrar en la región.
 
 
 # Reducción: `reduction`
@@ -128,6 +146,18 @@ int main(void)
 | 1 | 2, 3 | 26 |
 | 2 | 4, 5 | 82 |
 | 3 | 6, 7 | 170 |
+
+La reducción combina las sumas parciales con el valor original:
+
+```text
+Hilo:                 0       1       2       3
+Suma parcial:        292      26      82      170
+                      └───────┴───────┴───────┘
+                                  │
+                           reducción con +
+                                  ▼
+Valor original 0 + parciales = 570
+```
 
 Al terminar, se combinan con el valor original: `0 + 292 + 26 + 82 + 170 = 570`. Si se crean menos hilos, cambia el reparto, pero no el resultado de esta suma entera, siempre que no haya desbordamiento. `num_threads(4)` solicita cuatro hilos; no siempre garantiza que se creen cuatro.
 
@@ -257,6 +287,8 @@ printf("Tiempo: %f segundos\n", transcurrido);
 ```
 
 Como se determina exactamente el número de hilos de una región paralela? En primer caso si tiene la clausula numthreads me da igual cualquier otra cosa. Si está la clausula numthreads manda esa clausula. SI no esta esta clausula dependerá de una variable de entorno. Este comportamiento lo podemos modificar `omp_set_num_threads`. No es una funcion que tengamos que llamar dentro de una funcion paralela. En cualquier caso es un número fijo de hilos.
+
+La clausula numthreads no tiene porque estar presente. Que hace `omp_set_dynamic = true`: el numero de hilosd e las regiones paralelas que no tiene la clausula num_threads será dinámico en función del estado de la máquina. Es decir, se define por tiempo de ejecución y por los recursos libres que tenemos en el sistema.
 
 ## Variables de entorno
 

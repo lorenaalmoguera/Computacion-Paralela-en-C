@@ -241,3 +241,17 @@ La colectiva equivalente sería MPI_Bcast(vector, 16, MPI_INT, 1, MPI_COMM_WORLD
 Referencias: [sobre del mensaje](https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node58.htm), [capacidad y tipos](https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node107.htm) y [MPI_Finalize](https://docs.open-mpi.org/en/v5.0.0/man-openmpi/man3/MPI_Finalize.3.html).
 
 [Repaso de la clase del 29 de septiembre](29_septiembre_revisado.md) · [Clase del 6 de octubre](06_octubre.md).
+
+
+## Identificar el nodo: `MPI_Get_processor_name`
+
+Además de rango y número de procesos, se puede consultar el nombre del procesador o nodo donde se ejecuta cada proceso:
+
+```c
+char nombre[MPI_MAX_PROCESSOR_NAME];
+int longitud;
+MPI_Get_processor_name(nombre, &longitud);
+printf("Rango %d: %s (longitud %d)\n", myrank, nombre, longitud);
+```
+
+Se llama después de `MPI_Init`. Varios rangos pueden mostrar el mismo nombre si se ejecutan en el mismo nodo; el nombre no indica necesariamente el núcleo concreto. El orden de las líneas impresas no está garantizado. Véase la [documentación de Open MPI](https://docs.open-mpi.org/en/v5.0.x/man-openmpi/man3/MPI_Get_processor_name.3.html).

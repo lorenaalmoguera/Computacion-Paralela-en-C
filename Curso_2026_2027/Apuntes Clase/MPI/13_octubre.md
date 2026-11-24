@@ -929,3 +929,47 @@ Entonces el que llama es el root.
 ## MPI_Wtick();
 
 Temas de precision. Si estoy necesitando medir en ms y esas cosas entonces ya sería con MPI_Wtick.
+
+# Intercambio y datos no contiguos
+
+## `MPI_Sendrecv`
+
+`MPI_Sendrecv` combina un envío y una recepción bloqueantes en una llamada. Resulta útil para intercambiar datos entre vecinos sin depender de que una secuencia de `MPI_Send` seguidos de `MPI_Recv` tenga espacio de búfer suficiente. Los mensajes, rangos, etiquetas y comunicador deben seguir emparejándose correctamente.
+
+```c
+// Intercambio entre los rangos 0 y 1; ejecutar con exactamente 2 procesos.
+int otro = 1 - myrank;
+int enviado = myrank * 10;
+int recibido;
+MPI_Sendrecv(&enviado, 1, MPI_INT, otro, 7,
+             &recibido, 1, MPI_INT, otro, 7,
+             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+```
+
+Al finalizar, el rango 0 recibe 10 y el 1 recibe 0. Los búferes de envío y recepción de `MPI_Sendrecv` deben ser independientes. `MPI_Sendrecv_replace` ofrece una variante que reutiliza un mismo búfer, sobrescribiendo su contenido con lo recibido. Ninguna de estas llamadas sustituye una barrera global. [Referencia: MPI_Sendrecv](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Sendrecv.3.html).
+
+## Tipos derivados y empaquetado
+
+Las diapositivas mencionan dos alternativas cuando los datos que se quieren comunicar no forman un bloque sencillo:
+
+- **Tipo derivado:** describe la distribución de los datos en memoria. Por ejemplo, `MPI_Type_vector` puede describir una columna de una matriz contigua por filas; se confirma con `MPI_Type_commit`, se usa en la comunicación y después se libera con `MPI_Type_free`.
+- **Empaquetado:** `MPI_Pack` reúne datos en un búfer contiguo y `MPI_Unpack` los extrae. Se calcula el espacio necesario con `MPI_Pack_size` y se mantiene una posición que avanza al empaquetar o desempaquetar.
+
+Ejemplo de tipo derivado para enviar la columna 1 de una matriz contigua de 3 filas y 4 columnas, desde el rango 0 al rango 1:
+
+```c
+int matriz[3][4] = {{0,1,2,3}, {4,5,6,7}, {8,9,10,11}};
+int columna_recibida[3];
+MPI_Datatype columna;
+
+MPI_Type_vector(3, 1, 4, MPI_INT, &columna);
+MPI_Type_commit(&columna);
+if (myrank == 0)
+    MPI_Send(&matriz[0][1], 1, columna, 1, 8, MPI_COMM_WORLD);
+else if (myrank == 1)
+    MPI_Recv(columna_recibida, 3, MPI_INT, 0, 8,
+             MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+MPI_Type_free(&columna);
+```
+
+El receptor obtiene `{1, 5, 9}`: el tipo describe tres bloques de un entero, separados por cuatro enteros. Emisor y receptor tienen disposiciones de memoria distintas, pero describen la misma secuencia de tipos básicos. Este ejemplo requiere al menos dos procesos y una matriz realmente contigua; un `int **` con filas reservadas por separado no garantiza esa disposición. [Referencia: MPI_Type_vector](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Type_vector.3.html).

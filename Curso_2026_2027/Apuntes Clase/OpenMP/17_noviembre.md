@@ -2,6 +2,30 @@
 
 Los ejemplos usan OpenMP en C (`#include <omp.h>`). Para compilar con GCC se puede utilizar `gcc -fopenmp archivo.c -o programa`.
 
+## `private`, `shared` e `if`
+
+`shared(x)` indica que los hilos acceden a la misma variable `x`. Si varios hilos la actualizan, hay que coordinar esos accesos para evitar condiciones de carrera. `private(x)` crea una copia distinta para cada hilo; en C, una copia privada de una variable escalar no se inicializa automáticamente con el valor original.
+
+```c
+int x = 10;
+#pragma omp parallel shared(x)
+{
+    int local = omp_get_thread_num(); // privada: declarada en el bloque
+    // x es compartida; local es una copia distinta para cada hilo.
+}
+```
+
+La cláusula `if` en `parallel` permite decidir si se activa el paralelismo según una condición. Si es falsa, la región se ejecuta con un equipo de un solo hilo; el bloque sigue ejecutándose.
+
+```c
+#pragma omp parallel for if(n > 1000) schedule(static)
+for (int i = 0; i < n; i++) {
+    procesar(i);
+}
+```
+
+Esto puede evitar el coste de crear y coordinar un equipo grande cuando el trabajo es pequeño. El umbral debe elegirse según el programa y sus mediciones.
+
 ## `default(none)`
 
 Se escribe en la directiva de una región paralela y obliga a indicar explícitamente el alcance de las variables cuyo alcance no está determinado de antemano. Esto ayuda a detectar si una variable debe ser compartida (`shared`) o privada (`private`, `firstprivate`, etc.). Las variables declaradas dentro de la región y el índice de un `omp for` son ejemplos de variables con alcance predeterminado, por lo que no hay que enumerarlas.
@@ -97,6 +121,23 @@ Una región `critical` proporciona exclusión mutua: solo un hilo a la vez puede
 
 `critical` no implica una barrera: cuando un hilo sale puede continuar aunque otros todavía no hayan ejecutado el bloque. Solo hace falta una barrera adicional si el código posterior necesita esperar a que **todos** hayan terminado; también puede existir ya una barrera implícita, por ejemplo al final de un `omp for` sin `nowait`.
 
+## `atomic`
+
+`atomic` protege un acceso concreto a una posición de memoria compartida. Por ejemplo, evita que se pierdan actualizaciones simultáneas de un contador:
+
+```c
+#pragma omp atomic update
+contador += 1;
+```
+
+La directiva solo protege la operación admitida que la sigue; no convierte en atómico un bloque de varias instrucciones. Las demás operaciones concurrentes sobre la misma variable también deben sincronizarse adecuadamente. `critical` permite proteger un bloque más general; `atomic` puede ser más eficiente para una actualización sencilla, pero depende de la implementación y conviene medir. Para acumular una suma en un bucle, `reduction` suele evitar la contención de actualizar una variable en cada iteración.
+
+## `flush`
+
+`flush` participa en el modelo de memoria de OpenMP: permite establecer ciertas garantías de orden y visibilidad de memoria entre hilos cuando se utiliza con el protocolo de sincronización adecuado. **No es una barrera**, no espera a los demás hilos y por sí solo no evita una condición de carrera.
+
+OpenMP realiza operaciones de sincronización de memoria implícitas en construcciones como `barrier` y en la entrada y salida de `critical`. Para los ejemplos de estos apuntes resulta más claro utilizar barreras, `atomic`, `critical` o `reduction` que construir un protocolo manual con `flush`.
+
 ## `barrier`
 
 Una barrera hace que los hilos del equipo esperen hasta que todos hayan llegado a ese punto. También garantiza la visibilidad de las operaciones de memoria anteriores conforme a las reglas de sincronización de OpenMP. No calcula ni actualiza por sí sola una suma: permite usar con seguridad los resultados que otros hilos ya han escrito.
@@ -140,6 +181,17 @@ int main(void)
     return 0;
 }
 ```
+
+La barrera separa las dos fases del ejemplo:
+
+```text
+Hilo 0: calcula parcial 0 ──┐
+Hilo 1: calcula parcial 1 ──┤
+Hilo 2: calcula parcial 2 ──┼── BARRERA ──► hilo principal combina los parciales
+Hilo 3: calcula parcial 3 ──┘
+```
+
+Ningún hilo pasa la barrera hasta que todos han llegado. El número real de filas depende del número de hilos creados.
 
 Si se quisiera leer `suma_global` desde todos los hilos **dentro** de la región después de `master`, haría falta otra barrera tras ese bloque. En el ejemplo se imprime fuera, después de la barrera implícita de fin de región. Acumular primero en `parcial` también evita escribir repetidamente en posiciones contiguas del array compartido, lo que puede reducir el falso compartimiento de caché.
 
